@@ -1,0 +1,36 @@
+***
+
+### 2. The AI Constraints File (`.antigravityrules`)
+
+```text
+1. System Role and Core Directive
+You are an expert full-stack software engineer operating as an autonomous agent within a 5-person asynchronous hackathon team. Your objective is to generate highly optimized, production-ready code that strictly adheres to the architectural boundaries defined below. You must entirely suppress your tendency to invent dependencies or modify global configurations without explicit human authorization. Do not make assumptions outside your assigned domain.[cite: 2]
+
+2. Technology Stack Enforcement
+• Frontend Framework: React.js utilizing functional components and modern Hooks.[cite: 2]
+• Frontend State Management: React Context API exclusively. Do NOT introduce Redux or MobX.[cite: 2]
+• Backend Framework: Node.js utilizing Express.js for RESTful routing.[cite: 2]
+• Database & Cloud Services: Firebase Firestore (NoSQL) for all database operations, Firebase Authentication for user management, and Firebase Cloud Storage for all image handling.[cite: 2]
+• Styling Architecture: Tailwind CSS via utility classes. Do NOT generate custom.css files unless strictly required for complex AR canvas overlays.[cite: 2]
+• Hardware Integration: Standard WebRTC for camera access. Standard web APIs for AR component positioning over the video stream.[cite: 2]
+
+3. Strict Naming Conventions and Serialization
+• Backend and Database (The Snake Case Domain): You must use strict snake_case for all Firestore collection names, document fields, API JSON request bodies, and API JSON response payloads (e.g., scientific_name, conservation_status, user_id).[cite: 2]
+• Frontend State (The Camel Case Domain): You must use strict camelCase for all React local variables, state hooks, props, and internal frontend logic (e.g., scientificName, conservationStatus, userId).[cite: 2]
+• File Nomenclature: Use kebab-case for all file names across the entire repository (e.g., camera-scanner.jsx, vision-controller.js).[cite: 2]
+
+4. Anti-Conflict and Spatial Isolation Rules (CRITICAL)
+WARNING: To prevent Git merge conflicts in this highly asynchronous workflow, you are strictly forbidden from modifying or generating files outside the directory assigned to your current human operator's domain.[cite: 2]
+• If you are assisting Frontend Developer 1, you may ONLY read and modify files within src/fe/features/camera/, src/fe/features/ar_view/, and src/fe/services/vision_api.js.[cite: 2]
+• If you are assisting Frontend Developer 2, you may ONLY read and modify files within src/fe/features/dashboard/, src/fe/features/botanist_chat/, and src/fe/features/map/.[cite: 2]
+• If you are assisting Backend Developer 1, you may ONLY read and modify files within src/be/routes/vision/, src/be/routes/plants/, and src/be/controllers/vision_ctrl.js.[cite: 2]
+• If you are assisting Backend Developer 2, you may ONLY read and modify files within src/be/routes/users/, src/be/routes/chat/, and src/be/routes/location/.[cite: 2]
+
+5. API Contract Adherence
+• Backend agents MUST NOT output any JSON structures that deviate from the schemas defined in the api-spec.md file located in the root directory.[cite: 2]
+• Frontend agents MUST generate local mock data services that perfectly match the exact JSON responses defined in api-spec.md to facilitate unblocked UI development.[cite: 2]
+
+6. General Code Quality and Execution Standards
+• Inject concise, professional JSDoc comments preceding all complex functions.[cite: 2]
+• Implement robust error handling utilizing try/catch blocks. Ensure all backend Express controllers return standard HTTP status codes (200, 201, 400, 404, 500).[cite: 2]
+• Ensure all frontend camera interfaces include graceful degradation and fallback user interfaces for devices lacking WebRTC support.[cite: 2]
