@@ -1,0 +1,93 @@
+[
+  {
+    "plant_id": "plant_cg_101",
+    "scientific_name": "Croton gibsonianus",
+    "common_name": "Gibson's Croton",
+    "plant_family": "Euphorbiaceae",
+    "native_region": "Northern Western Ghats, Maharashtra",
+    "ecological_importance": "Crucial for supporting specific endemic insect populations in semi-evergreen forest riparian zones and maintaining stream bank stability.",
+    "conservation_status": "Critically Endangered",
+    "is_rare": true,
+    "threats": "Severe habitat loss and highly restricted localized populations near perennial streams.",
+    "conservation_best_practices": "Protect local perennial spring habitats. Support ex-situ conservation in specialized biosphere reserves.",
+    "historical_context": "Rediscovered after 180 years at Harishchandragad Hill."
+  },
+  {
+    "plant_id": "plant_am_204",
+    "scientific_name": "Alphonsea madraspatana",
+    "common_name": "Madras Alphonsea",
+    "plant_family": "Annonaceae",
+    "native_region": "Eastern Ghats Foothills",
+    "ecological_importance": "Provides dense canopy cover and supports local frugivorous birds.",
+    "conservation_status": "Vulnerable",
+    "is_rare": true,
+    "threats": "Deforestation and urban expansion.",
+    "conservation_best_practices": "In-situ conservation and afforestation programs.",
+    "historical_context": "Endemic to specific hilly tracts in Southern India."
+  },
+  {
+    "plant_id": "plant_gs_205",
+    "scientific_name": "Gloriosa superba",
+    "common_name": "Flame Lily",
+    "plant_family": "Colchicaceae",
+    "native_region": "Eastern Ghats Foothills",
+    "ecological_importance": "Highly valued in traditional medicine, supports specific pollinators.",
+    "conservation_status": "Least Concern",
+    "is_rare": false,
+    "threats": "Over-harvesting for medicinal use.",
+    "conservation_best_practices": "Promote sustainable harvesting and cultivation.",
+    "historical_context": "State flower of Tamil Nadu."
+  },
+  {
+    "plant_id": "plant_sa_301",
+    "scientific_name": "Santalum album",
+    "common_name": "Indian Sandalwood",
+    "plant_family": "Santalaceae",
+    "native_region": "Western Ghats, Deccan Plateau",
+    "ecological_importance": "Hemiparasitic tree forming complex ecological relationships with host plants.",
+    "conservation_status": "Vulnerable",
+    "is_rare": true,
+    "threats": "Illegal logging, smuggling, and habitat fragmentation.",
+    "conservation_best_practices": "Strict legal protection, sustainable agroforestry.",
+    "historical_context": "Deeply ingrained in Indian culture, religious rituals, and traditional medicine for millennia."
+  },
+  {
+    "plant_id": "plant_ai_402",
+    "scientific_name": "Azadirachta indica",
+    "common_name": "Neem",
+    "plant_family": "Meliaceae",
+    "native_region": "Indian Subcontinent",
+    "ecological_importance": "Highly drought-resistant, improves soil fertility, and provides natural pest control.",
+    "conservation_status": "Least Concern",
+    "is_rare": false,
+    "threats": "None significant.",
+    "conservation_best_practices": "Widespread planting in arid and semi-arid regions.",
+    "historical_context": "Known as 'the village pharmacy' due to its extensive medicinal properties."
+  },
+  {
+    "plant_id": "plant_fr_503",
+    "scientific_name": "Ficus religiosa",
+    "common_name": "Sacred Fig / Peepal",
+    "plant_family": "Moraceae",
+    "native_region": "Indian Subcontinent",
+    "ecological_importance": "Keystone species providing food (figs) and shelter for numerous birds, insects, and mammals.",
+    "conservation_status": "Least Concern",
+    "is_rare": false,
+    "threats": "Urban development.",
+    "conservation_best_practices": "Protect mature specimens in urban and rural landscapes.",
+    "historical_context": "Revered in Hinduism, Buddhism, and Jainism; historically associated with enlightenment."
+  },
+  {
+    "plant_id": "plant_sa_604",
+    "scientific_name": "Saraca asoca",
+    "common_name": "Ashoka Tree",
+    "plant_family": "Fabaceae",
+    "native_region": "Deccan Plateau and Western Ghats",
+    "ecological_importance": "Supports specific butterfly species and contributes to forest understory diversity.",
+    "conservation_status": "Vulnerable",
+    "is_rare": true,
+    "threats": "Habitat destruction and over-collection for medicinal use.",
+    "conservation_best_practices": "Encourage planting in botanical gardens and protected forest areas.",
+    "historical_context": "Highly sacred in Indian mythology, associated with love and fertility."
+  }
+]
