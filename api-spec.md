@@ -1,3 +1,5 @@
+1. The API Contract (api-spec.md)
+Markdown
 # api-spec.md (Master API Contract)
 
 ## Domain 1: Vision and Identification Integration
@@ -15,7 +17,10 @@ Processes the captured camera frame via computer vision inference to identify th
   },
   "device_timestamp": "2026-09-01T10:15:30Z"
 }
-Expected Response (200 OK):JSON{
+Expected Response (200 OK):
+
+JSON
+{
   "success": true,
   "data": {
     "identified_plant_id": "plant_cg_101",
@@ -24,7 +29,15 @@ Expected Response (200 OK):JSON{
     "requires_rare_highlight": true
   }
 }
-Domain 2: AR Metadata RetrievalFetches the scientific, ecological, and conservation-related information required for the Augmented Reality species visualization.  Endpoint: GET /api/v1/plants/:plant_id/ar-metadataExpected Response (200 OK):JSON{
+Domain 2: AR Metadata Retrieval
+Fetches the scientific, ecological, and conservation-related information required for the Augmented Reality species visualization.
+
+Endpoint: GET /api/v1/plants/:plant_id/ar-metadata
+
+Expected Response (200 OK):
+
+JSON
+{
   "success": true,
   "data": {
     "plant_id": "plant_cg_101",
@@ -40,12 +53,23 @@ Domain 2: AR Metadata RetrievalFetches the scientific, ecological, and conservat
     "historical_context": "Rediscovered after 180 years at Harishchandragad Hill."
   }
 }
-Domain 3: AI Botanical Guide (Virtual Assistant)Processes natural language queries regarding the scanned plant, ecological importance, or local biodiversity.  Endpoint: POST /api/v1/chat/botanistRequest Payload:JSON{
+Domain 3: AI Botanical Guide (Virtual Assistant)
+Processes natural language queries regarding the scanned plant, ecological importance, or local biodiversity.
+
+Endpoint: POST /api/v1/chat/botanist
+
+Request Payload:
+
+JSON
+{
   "user_id": "usr_99823",
   "current_plant_context": "plant_cg_101",
   "message": "Can I grow this plant in my home garden in Vellore?"
 }
-Expected Response (200 OK):JSON{
+Expected Response (200 OK):
+
+JSON
+{
   "success": true,
   "data": {
     "reply_text": "Because Croton gibsonianus is highly habitat-specific to the perennial streams of the Western Ghats, it would be extremely difficult to cultivate in a standard home garden in Vellore. Instead, I recommend focusing on native Eastern Ghats species like Gloriosa superba for your local garden to support regional biodiversity.",
@@ -55,14 +79,25 @@ Expected Response (200 OK):JSON{
     ]
   }
 }
-Domain 4: User Gamification and Discovery ProfilesLogs a successfully identified plant to the user's profile, calculates points, and evaluates badge unlocking logic.  Endpoint: POST /api/v1/users/:user_id/discoveriesRequest Payload:JSON{
+Domain 4: User Gamification and Discovery Profiles
+Logs a successfully identified plant to the user's profile, calculates points, and evaluates badge unlocking logic.
+
+Endpoint: POST /api/v1/users/:user_id/discoveries
+
+Request Payload:
+
+JSON
+{
   "plant_id": "plant_cg_101",
   "location": {
     "latitude": 12.9165,
     "longitude": 79.1325
   }
 }
-Expected Response (201 Created):JSON{
+Expected Response (201 Created):
+
+JSON
+{
   "success": true,
   "data": {
     "points_awarded": 150,
@@ -78,7 +113,15 @@ Expected Response (201 Created):JSON{
     "gamification_message": "Incredible discovery! You have documented a critically endangered species, earning a massive rarity point multiplier."
   }
 }
-Domain 5: Location-Based Biodiversity InsightsReturns a curated list of native and threatened plants historically documented within a specified radius of the user's current coordinates.  Endpoint: GET /api/v1/location/nearby-speciesExpected Response (200 OK):JSON{
+Domain 5: Location-Based Biodiversity Insights
+Returns a curated list of native and threatened plants historically documented within a specified radius of the user's current coordinates.
+
+Endpoint: GET /api/v1/location/nearby-species
+
+Expected Response (200 OK):
+
+JSON
+{
   "success": true,
   "data": {
     "search_radius_km": 5,
