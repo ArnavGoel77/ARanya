@@ -39,8 +39,26 @@ export default function useCameraStream() {
   }
 
   useEffect(() => {
-    // TODO: implement getUserMedia call here
-    return () => stopStream();
+    let mounted = true;
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+      .then((stream) => {
+        if (!mounted) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          setIsStreaming(true);
+        }
+      })
+      .catch((err) => {
+        if (mounted) setStreamError(err);
+      });
+      
+    return () => {
+      mounted = false;
+      stopStream();
+    };
   }, []);
 
   return { videoRef, isStreaming, streamError, stopStream };

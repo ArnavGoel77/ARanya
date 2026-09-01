@@ -24,11 +24,21 @@ export default function useCaptureFrame(videoRef) {
   const [isCapturing, setIsCapturing] = useState(false);
 
   const captureFrame = useCallback(async () => {
+    if (!videoRef.current) return null;
+    
     setIsCapturing(true);
     try {
-      // TODO: implement canvas-based frame extraction
-      const base64Frame = "";
-      return base64Frame;
+      const video = videoRef.current;
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d");
+      
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+      
+      // Return base64 string without the prefix
+      return dataUrl.split(",")[1];
     } finally {
       setIsCapturing(false);
     }
