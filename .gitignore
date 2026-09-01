@@ -1,6 +1,6 @@
 node_modules/
 .env
-
+package-log.json
 # Firebase config keys
 firebase-credentials.json
 firebase-adminsdk.json
