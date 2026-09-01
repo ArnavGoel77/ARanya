@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { buildBotanistPrompt } = require('./botanist-prompt');
+const { GoogleGenAI } = require('@google/genai');
+
+// Initialize the Gemini client. It will automatically use the GEMINI_API_KEY environment variable.
+const ai = new GoogleGenAI({});
 
 /**
  * @route POST /api/v1/chat/botanist
@@ -9,21 +13,28 @@ const { buildBotanistPrompt } = require('./botanist-prompt');
 router.post('/botanist', async (req, res) => {
   try {
     const { user_id, current_plant_context, message } = req.body;
-
+    
     // Prepare the prompt for the LLM
     const llmPrompt = buildBotanistPrompt(current_plant_context, message);
+    
+    // Call Gemini to generate the response
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: llmPrompt,
+      config: {
+        responseMimeType: 'application/json',
+      }
+    });
+    
+    // Parse the JSON response returned by the model
+    const parsedResponse = JSON.parse(response.text);
 
-    // TODO: Send llmPrompt to AI provider (e.g., OpenAI, Vertex AI) and parse response
-
-    // Mock response matching api-spec.md
+    // Return the response matching api-spec.md
     res.status(200).json({
       success: true,
       data: {
-        reply_text: "Because Croton gibsonianus is highly habitat-specific to the perennial streams of the Western Ghats, it would be extremely difficult to cultivate in a standard home garden in Vellore. Instead, I recommend focusing on native Eastern Ghats species like Gloriosa superba for your local garden to support regional biodiversity.",
-        suggested_followup_queries: [
-          "What are the best native plants for Vellore?",
-          "How do specialized biosphere reserves work?"
-        ]
+        reply_text: parsedResponse.reply_text,
+        suggested_followup_queries: parsedResponse.suggested_followup_queries
       }
     });
   } catch (error) {
