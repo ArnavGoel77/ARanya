@@ -28,18 +28,18 @@ Instructions:
  * @returns {string} The full prompt string
  */
 const buildBotanistPrompt = (current_plant_context, user_message) => {
-  return \`
-\${botanistSystemPrompt}
+  return `
+${botanistSystemPrompt}
 
-Context Plant ID: \${current_plant_context}
-User Query: \${user_message}
+Context Plant ID: ${current_plant_context}
+User Query: ${user_message}
 
 Please provide a response and suggest 2 follow-up questions in JSON format exactly like this:
 {
   "reply_text": "...",
   "suggested_followup_queries": ["...", "..."]
 }
-\`;
+`;
 };
 
 module.exports = {
