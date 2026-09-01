@@ -1,29 +1,32 @@
 const express = require('express');
 const router = express.Router();
+const { db } = require('../../config/firebase');
 
 // GET /api/v1/plants/:plant_id/ar-metadata
 router.get('/:plant_id/ar-metadata', async (req, res) => {
   try {
     const { plant_id } = req.params;
     
-    // Mock response for ar-metadata based on API spec
+    if (!db) {
+      return res.status(500).json({ success: false, error: "Database connection failed." });
+    }
+
+    const docRef = db.collection('plants').doc(plant_id);
+    const docSnap = await docRef.get();
+
+    if (!docSnap.exists) {
+      return res.status(404).json({ success: false, error: "Plant metadata not found for the provided ID." });
+    }
+
+    const plantData = docSnap.data();
+
+    // The data in Firestore is already perfectly formatted in snake_case per our schema
     res.status(200).json({
       success: true,
-      data: {
-        plant_id: plant_id,
-        scientific_name: "Croton gibsonianus",
-        common_name: "Gibson's Croton",
-        plant_family: "Euphorbiaceae",
-        native_region: "Northern Western Ghats, Maharashtra",
-        ecological_importance: "Crucial for supporting specific endemic insect populations in semi-evergreen forest riparian zones and maintaining stream bank stability.",
-        conservation_status: "Critically Endangered",
-        is_rare: true,
-        threats: "Severe habitat loss and highly restricted localized populations near perennial streams.",
-        conservation_best_practices: "Protect local perennial spring habitats. Support ex-situ conservation in specialized biosphere reserves.",
-        historical_context: "Rediscovered after 180 years at Harishchandragad Hill."
-      }
+      data: plantData
     });
   } catch (error) {
+    console.error('Error fetching plant metadata:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
