@@ -1,65 +1,64 @@
 /**
  * use-camera-stream.js
  *
- * Custom React hook — manages the WebRTC camera stream lifecycle.
+ * Manages the full WebRTC camera stream lifecycle:
+ *  - Requests the rear-facing camera via navigator.mediaDevices.getUserMedia
+ *  - Attaches the stream to a <video> ref
+ *  - Cleans up all tracks on unmount or manual stop
  *
  * Returns:
- *  - videoRef     : React ref to attach to a <video> element
- *  - isStreaming  : boolean — true once the stream is active
- *  - streamError  : Error | null — set if getUserMedia fails
- *  - stopStream   : function — call on unmount / user cancel
- *
- * TODO (implementation phase):
- *  - Call navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
- *  - Attach stream to videoRef.current.srcObject
- *  - Clean up tracks on component unmount via useEffect return
+ *  videoRef      – attach to <video> element as ref={videoRef}
+ *  isStreaming   – true once the stream is active and playing
+ *  streamError   – Error | null; set when getUserMedia or play() fails
+ *  startStream   – call to (re-)initialise the camera
+ *  stopStream    – call to tear down tracks manually
  */
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 
-/**
- * @returns {{
- *   videoRef: React.RefObject<HTMLVideoElement>,
- *   isStreaming: boolean,
- *   streamError: Error | null,
- *   stopStream: () => void
- * }}
- */
 export default function useCameraStream() {
   const videoRef = useRef(null);
+  const streamRef = useRef(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamError, setStreamError] = useState(null);
 
-  function stopStream() {
-    if (videoRef.current?.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
-      setIsStreaming(false);
+  const stopStream = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
     }
-  }
-
-  useEffect(() => {
-    let mounted = true;
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-      .then((stream) => {
-        if (!mounted) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          setIsStreaming(true);
-        }
-      })
-      .catch((err) => {
-        if (mounted) setStreamError(err);
-      });
-      
-    return () => {
-      mounted = false;
-      stopStream();
-    };
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsStreaming(false);
   }, []);
 
-  return { videoRef, isStreaming, streamError, stopStream };
+  const startStream = useCallback(async () => {
+    setStreamError(null);
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+
+      streamRef.current = mediaStream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+        await videoRef.current.play();
+        setIsStreaming(true);
+      }
+    } catch (err) {
+      setStreamError(err);
+      setIsStreaming(false);
+    }
+  }, []);
+
+  // Auto-start on mount, auto-stop on unmount
+  useEffect(() => {
+    startStream();
+    return () => stopStream();
+  }, [startStream, stopStream]);
+
+  return { videoRef, isStreaming, streamError, startStream, stopStream };
 }
