@@ -33,3 +33,6 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
 });
+
+// Export the Express app for Vercel Serverless Functions
+module.exports = app;
