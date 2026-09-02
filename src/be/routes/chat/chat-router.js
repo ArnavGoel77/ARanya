@@ -17,14 +17,26 @@ router.post('/botanist', async (req, res) => {
     // Prepare the prompt for the LLM
     const llmPrompt = buildBotanistPrompt(current_plant_context, message);
     
-    // Call Gemini to generate the response
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: llmPrompt,
-      config: {
-        responseMimeType: 'application/json',
+    // Call Gemini with automatic retries for "High Demand" (503) errors
+    let response;
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        response = await ai.models.generateContent({
+          model: 'gemini-3.5-flash',
+          contents: llmPrompt,
+          config: {
+            responseMimeType: 'application/json',
+          }
+        });
+        break; // Success! Break out of the loop
+      } catch (err) {
+        if (retries === 1) throw err; // Out of retries, throw the error
+        console.warn(`Gemini API overloaded. Retrying... (${retries - 1} attempts left)`);
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retrying
+        retries--;
       }
-    });
+    }
     
     // Parse the JSON response returned by the model
     const parsedResponse = JSON.parse(response.text);
