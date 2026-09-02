@@ -3,9 +3,47 @@ const tf = require('@tensorflow/tfjs'); // Switched to pure JS TF to avoid C++ b
 const Jimp = require('jimp'); // Pure JS image decoding
 const path = require('path');
 const fs = require('fs');
+const archiver = require('archiver');
 
 let model;
 let classes = [];
+
+// Custom IO Handler to load Teachable Machine files from disk in pure JS
+const customFileIO = (modelPath) => {
+  return {
+    load: async () => {
+      const modelJsonData = fs.readFileSync(modelPath, 'utf8');
+      const modelJson = JSON.parse(modelJsonData);
+      
+      const dir = path.dirname(modelPath);
+      const weightManifest = modelJson.weightsManifest;
+      const buffers = [];
+      
+      for (const group of weightManifest) {
+        for (const pathStr of group.paths) {
+          const weightPath = path.join(dir, pathStr);
+          const buf = fs.readFileSync(weightPath);
+          // Convert Node Buffer to ArrayBuffer
+          buffers.push(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength));
+        }
+      }
+      
+      const totalLength = buffers.reduce((acc, b) => acc + b.byteLength, 0);
+      const weightData = new Uint8Array(totalLength);
+      let offset = 0;
+      for (const b of buffers) {
+        weightData.set(new Uint8Array(b), offset);
+        offset += b.byteLength;
+      }
+      
+      return {
+        modelTopology: modelJson.modelTopology,
+        weightSpecs: weightManifest[0].weights,
+        weightData: weightData.buffer
+      };
+    }
+  };
+};
 
 // Load the Teachable Machine model asynchronously
 const loadModel = async () => {
@@ -14,7 +52,7 @@ const loadModel = async () => {
     const metadataPath = path.resolve(__dirname, '../model/metadata.json');
 
     if (fs.existsSync(modelPath) && fs.existsSync(metadataPath)) {
-      model = await tf.loadLayersModel(`file://${modelPath}`);
+      model = await tf.loadLayersModel(customFileIO(modelPath));
       const metadata = require(metadataPath);
       classes = metadata.labels || [];
       console.log('Teachable Machine model and metadata loaded successfully.');
@@ -129,6 +167,63 @@ const identify_plant = async (req, res) => {
   }
 };
 
+const generate_offline_payload = async (req, res) => {
+  try {
+    if (!db) {
+      return res.status(500).json({ success: false, error: "Database not initialized" });
+    }
+
+    // 1. Fetch all plant metadata from Firestore
+    const plantsSnapshot = await db.collection('plants').get();
+    const plantsData = [];
+    plantsSnapshot.forEach(doc => {
+      plantsData.push(doc.data());
+    });
+
+    // 2. Set headers to tell the browser/app it's downloading a zip file
+    res.attachment('aranya_offline_payload.zip');
+    
+    // 3. Create a zip archiver stream
+    const archive = archiver('zip', {
+      zlib: { level: 9 } // Maximum compression
+    });
+
+    archive.on('error', (err) => {
+      throw err;
+    });
+
+    // Pipe the dynamically generated archive directly to the HTTP response
+    archive.pipe(res);
+
+    // 4. Add the dynamically generated plants.json data
+    archive.append(JSON.stringify(plantsData, null, 2), { name: 'plants.json' });
+
+    // 5. Add the Teachable Machine model files from the filesystem
+    const modelDir = path.resolve(__dirname, '../model');
+    const filesToInclude = ['model.json', 'metadata.json', 'weights.bin'];
+    
+    for (const file of filesToInclude) {
+      const filePath = path.join(modelDir, file);
+      if (fs.existsSync(filePath)) {
+        archive.file(filePath, { name: file });
+      } else {
+        console.warn(`[!] Offline Payload Warning: ${file} not found in src/be/model/`);
+      }
+    }
+
+    // 6. Finalize the archive to finish the download
+    await archive.finalize();
+
+  } catch (error) {
+    console.error('Error generating offline payload:', error);
+    // Only send JSON error if the zip download hasn't started yet
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  }
+};
+
 module.exports = {
-  identify_plant
+  identify_plant,
+  generate_offline_payload
 };
