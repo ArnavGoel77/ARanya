@@ -147,7 +147,9 @@ export default function DashboardPage() {
             <button className="close-camera-button" onClick={closeCamera}>
               <X size={24} color="#ffffff" />
             </button>
-            <CameraScanner onScanComplete={closeCamera} />
+            <CameraScanner 
+              onScanComplete={(result) => console.log("Scan complete:", result)} 
+            />
           </div>
         )}
       </main>
