@@ -56,27 +56,9 @@ export default function useCameraStream() {
 
   // Auto-start on mount, auto-stop on unmount
   useEffect(() => {
-    let mounted = true;
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-      .then((stream) => {
-        if (!mounted) {
-          stream.getTracks().forEach((track) => track.stop());
-          return;
-        }
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          setIsStreaming(true);
-        }
-      })
-      .catch((err) => {
-        if (mounted) setStreamError(err);
-      });
-      
-    return () => {
-      mounted = false;
-      stopStream();
-    };
-  }, []);
+    startStream();
+    return () => stopStream();
+  }, [startStream, stopStream]);
 
   return { videoRef, isStreaming, streamError, startStream, stopStream };
 }

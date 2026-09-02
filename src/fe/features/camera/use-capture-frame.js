@@ -15,24 +15,28 @@ import { useRef, useState, useCallback } from "react";
 const JPEG_QUALITY = 0.9;
 
 export default function useCaptureFrame(videoRef) {
+  // Persistent off-screen canvas — reused on every capture (more performant
+  // than creating a new element each call as done in the V3 teammate version).
   const canvasRef = useRef(document.createElement("canvas"));
   const [isCapturing, setIsCapturing] = useState(false);
 
   const captureFrame = useCallback(async () => {
-    if (!videoRef.current) return null;
-    
+    const video = videoRef.current;
+    if (!video || video.readyState < 2) {
+      throw new Error("captureFrame: video element is not ready.");
+    }
+
     setIsCapturing(true);
     try {
-      const video = videoRef.current;
-      const canvas = document.createElement("canvas");
+      const canvas = canvasRef.current;
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
+
       const ctx = canvas.getContext("2d");
-      
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-      
-      // Return base64 string without the prefix
+
+      // Strip "data:image/jpeg;base64," prefix — API expects raw base64
+      const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
       return dataUrl.split(",")[1];
     } finally {
       setIsCapturing(false);
