@@ -27,6 +27,7 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import useCameraStream from "./use-camera-stream.js";
 import useCaptureFrame from "./use-capture-frame.js";
+import useArTracking from "./use-ar-tracking.js";
 import { mockIdentifyPlant } from "../../services/mock-vision-api.js";
 import { mockGetArMetadata } from "../../services/mock-vision-api.js";
 
@@ -64,6 +65,7 @@ export default function CameraScanner({ onScanComplete }) {
   const { captureFrame } = useCaptureFrame(videoRef);
 
   const [scanState, setScanState] = useState(SCAN_STATE.IDLE);
+  const { offset, requestPermission } = useArTracking(scanState === SCAN_STATE.SUCCESS);
   const [scanError, setScanError] = useState(null);
   const [countdown, setCountdown] = useState(AUTO_SCAN_INTERVAL_MS / 1000);
 
@@ -237,6 +239,7 @@ export default function CameraScanner({ onScanComplete }) {
     <div
       className="fixed inset-0 z-50 flex flex-col items-center justify-end overflow-hidden bg-black"
       style={{ fontFamily: "'Inter', sans-serif" }}
+      onClick={requestPermission}
     >
       {/* Live video feed */}
       <video
@@ -260,10 +263,15 @@ export default function CameraScanner({ onScanComplete }) {
         />
       </div>
 
-      {/* ── Inline result card (replaces AR overlay until AR is implemented) ── */}
+      {/* ── AR Overlay Result Card ── */}
       {scanState === SCAN_STATE.SUCCESS && identifyResult && (
-        <div className="absolute inset-x-4 top-16 z-20 rounded-2xl shadow-2xl overflow-hidden"
-          style={{ backdropFilter: "blur(16px)", background: "rgba(0,0,0,0.75)" }}
+        <div className="absolute inset-x-4 top-48 z-20 rounded-2xl shadow-2xl overflow-hidden pointer-events-auto"
+          style={{ 
+            backdropFilter: "blur(16px)", 
+            background: "rgba(0,0,0,0.75)",
+            transform: `translate(${offset.x}px, ${offset.y}px)`,
+            transition: "transform 0.1s ease-out"
+          }}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 pt-4 pb-2">
