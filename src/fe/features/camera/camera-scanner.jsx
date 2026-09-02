@@ -28,8 +28,7 @@ import React, { useState, useCallback, useEffect, useRef } from "react";
 import useCameraStream from "./use-camera-stream.js";
 import useCaptureFrame from "./use-capture-frame.js";
 import useArTracking from "./use-ar-tracking.js";
-import { mockIdentifyPlant } from "../../services/mock-vision-api.js";
-import { mockGetArMetadata } from "../../services/mock-vision-api.js";
+import { identifyPlant, getArMetadata } from "../../services/vision_api.js";
 
 /** Auto-scan interval (ms). */
 const AUTO_SCAN_INTERVAL_MS = 2000;
@@ -135,7 +134,7 @@ export default function CameraScanner({ onScanComplete }) {
       }
 
       setScanState(SCAN_STATE.IDENTIFYING);
-      const response = await mockIdentifyPlant({
+      const response = await identifyPlant({
         imageData,
         captureLocation,
         deviceTimestamp: new Date().toISOString(),
@@ -146,7 +145,7 @@ export default function CameraScanner({ onScanComplete }) {
 
       // Also fetch AR metadata so we can show plant details on the card
       try {
-        const meta = await mockGetArMetadata(resultData.identified_plant_id);
+        const meta = await getArMetadata(resultData.identified_plant_id);
         setArMetadata(meta.data);
       } catch {
         setArMetadata(null);

@@ -14,7 +14,8 @@
 
 import { useRef, useState, useCallback } from "react";
 
-const JPEG_QUALITY = 0.9;
+const JPEG_QUALITY = 0.8;
+const MAX_DIMENSION = 512;
 
 export default function useCaptureFrame(videoRef) {
   // Persistent off-screen canvas — reused on every capture
@@ -32,12 +33,26 @@ export default function useCaptureFrame(videoRef) {
 
     setIsCapturing(true);
     try {
+      let width = video.videoWidth;
+      let height = video.videoHeight;
+
+      // Scale down to prevent HTTP 413 Payload Too Large and improve latency
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        if (width > height) {
+          height = Math.round((height * MAX_DIMENSION) / width);
+          width = MAX_DIMENSION;
+        } else {
+          width = Math.round((width * MAX_DIMENSION) / height);
+          height = MAX_DIMENSION;
+        }
+      }
+
       const canvas = canvasRef.current;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      canvas.width = width;
+      canvas.height = height;
 
       const ctx = canvas.getContext("2d");
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(video, 0, 0, width, height);
 
       // Strip "data:image/jpeg;base64," prefix — API expects raw base64
       const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
