@@ -17,7 +17,7 @@
  *  - All internal JS variables / params  → camelCase  (FE domain)
  */
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL ?? "http://localhost:5000";
+const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL ?? "http://localhost:5000";
 
 // ---------------------------------------------------------------------------
 // identifyPlant  →  POST /api/v1/vision/identify
@@ -42,18 +42,26 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL ?? "http://localhost:500
  * }>}
  */
 export async function identifyPlant({ imageData, captureLocation, deviceTimestamp }) {
+  // Convert base64 image data back to binary blob for multipart upload
+  const byteString = atob(imageData);
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  const blob = new Blob([ab], { type: "image/jpeg" });
+
+  const formData = new FormData();
+  formData.append("image_data", blob, "capture.jpg");
+  formData.append("capture_location", JSON.stringify({
+    latitude: captureLocation.latitude,
+    longitude: captureLocation.longitude,
+  }));
+  formData.append("device_timestamp", deviceTimestamp);
+
   const response = await fetch(`${API_BASE_URL}/api/v1/vision/identify`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      // Serialize camelCase FE fields → snake_case API contract
-      image_data: imageData,
-      capture_location: {
-        latitude: captureLocation.latitude,
-        longitude: captureLocation.longitude,
-      },
-      device_timestamp: deviceTimestamp,
-    }),
+    body: formData,
   });
 
   if (!response.ok) {
