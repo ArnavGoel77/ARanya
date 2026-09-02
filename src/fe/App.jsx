@@ -1,14 +1,14 @@
 /**
  * App.jsx — Root application component.
  *
- * Currently renders the FE Dev 2 API Test Harness for local development.
- * Replace with your router and feature pages when the full app is assembled.
+ * Renders the Dashboard feature for the Advaith-dashboard branch.
+ * Replace with a router when the team assembles the full app.
  */
 import React from "react";
-import ApiTestHarness from "./features/botanist_chat/components/api-test-harness";
+import DashboardPage from "./features/dashboard/components/dashboard-page";
 
 const App = () => {
-  return <ApiTestHarness />;
+  return <DashboardPage />;
 };
 
 export default App;
