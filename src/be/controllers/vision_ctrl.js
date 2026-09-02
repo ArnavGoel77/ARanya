@@ -1,6 +1,6 @@
 const { db } = require('../config/firebase');
 const tf = require('@tensorflow/tfjs'); // Switched to pure JS TF to avoid C++ build errors
-const Jimp = require('jimp'); // Pure JS image decoding
+const { Jimp } = require('jimp'); // Pure JS image decoding
 const path = require('path');
 const fs = require('fs');
 const archiver = require('archiver');
@@ -91,7 +91,7 @@ const identify_plant = async (req, res) => {
       // Decode image buffer using Jimp (Pure JS)
       const image = await Jimp.read(req.file.buffer);
       // Teachable Machine typically uses 224x224
-      image.cover(224, 224);
+      image.cover({ w: 224, h: 224 });
       
       const numPixels = image.bitmap.width * image.bitmap.height;
       const values = new Float32Array(numPixels * 3);
