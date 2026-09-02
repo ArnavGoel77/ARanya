@@ -16,7 +16,8 @@ export default function DashboardPage() {
 
   const handleScanComplete = (result) => {
     console.log("Scan complete:", result);
-    closeCamera();
+    // Camera remains open to allow scanning another plant.
+    // User can manually close it via the top-right cross button.
   };
 
   return (
