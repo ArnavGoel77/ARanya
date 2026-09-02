@@ -4,23 +4,23 @@
  * React Context + Provider for the Camera / Vision feature.
  *
  * What it owns:
- *  - Renders <CameraScanner> and captures its onScanComplete results
- *  - Holds the latest scan result in state so any descendant can read it
- *  - Exposes clearScanResult() so the dashboard can reset after logging
+ *  - Renders <CameraScanner> via a React Portal directly on document.body.
+ *    This means the camera overlay is NEVER affected by parent component
+ *    unmounts (e.g., a Dashboard modal closing). Only explicit closeScanner()
+ *    calls can hide it.
+ *  - Holds the latest scan result in state so any descendant can read it.
+ *  - Exposes clearScanResult() so the dashboard can reset after logging.
  *
  * How the dashboard uses it:
  *  1. Wrap your page tree with <CameraProvider>
- *  2. Place <CameraView /> wherever you want the camera feed to appear
+ *  2. Call openScanner() to show the camera overlay
  *  3. Read the result with useCameraContext() and call logDiscovery() on it
+ *  4. Call clearScanResult() after logging
+ *  5. Call closeScanner() when done — this is the ONLY way to hide the camera
  *
  * State (camelCase per .antigravityrules §4):
- *  - lastScanResult    : Object | null  — the `data` object from /vision/identify
- *  - isScannerVisible  : boolean        — controls whether the feed is mounted
- *
- * Integration contract with DashboardProvider:
- *  lastScanResult.identified_plant_id  →  plantId arg for logDiscovery()
- *  (captureLocation is read from the scan result in a real implementation;
- *   for now the dashboard can pass { latitude: 0, longitude: 0 } as a fallback)
+ *  - lastScanResult   : Object | null
+ *  - isScannerVisible : boolean
  */
 
 import React, {
@@ -29,6 +29,7 @@ import React, {
   useContext,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 import CameraScanner from "./camera-scanner.jsx";
 
 // ---------------------------------------------------------------------------
@@ -42,37 +43,26 @@ const CameraContext = createContext(null);
 // ---------------------------------------------------------------------------
 
 /**
- * Wraps the camera feature. Place this above any component that needs to read
- * scan results or toggle the scanner.
- *
+ * Wrap this above any component tree that needs camera access.
  * @param {{ children: React.ReactNode }} props
  */
 export const CameraProvider = ({ children }) => {
   /** The `data` sub-object from the last successful /vision/identify response. */
   const [lastScanResult, setLastScanResult] = useState(null);
 
-  /** Controls whether CameraScanner (and WebRTC stream) is mounted. */
+  /** Controls whether the camera overlay is mounted. */
   const [isScannerVisible, setIsScannerVisible] = useState(false);
 
-  /** Called by CameraScanner every time a scan completes. */
   const handleScanComplete = useCallback((resultData) => {
     setLastScanResult(resultData);
+    // NOTE: do NOT call closeScanner() here.
+    // The camera should stay open after identification.
+    // The dashboard calls closeScanner() only when the user explicitly exits.
   }, []);
 
-  /** Reset after the dashboard has logged the discovery. */
-  const clearScanResult = useCallback(() => {
-    setLastScanResult(null);
-  }, []);
-
-  /** Show the camera feed. */
-  const openScanner = useCallback(() => {
-    setIsScannerVisible(true);
-  }, []);
-
-  /** Hide the camera feed and stop WebRTC (unmounting CameraScanner stops the stream). */
-  const closeScanner = useCallback(() => {
-    setIsScannerVisible(false);
-  }, []);
+  const clearScanResult = useCallback(() => setLastScanResult(null), []);
+  const openScanner    = useCallback(() => setIsScannerVisible(true), []);
+  const closeScanner   = useCallback(() => setIsScannerVisible(false), []);
 
   const contextValue = {
     lastScanResult,
@@ -85,11 +75,17 @@ export const CameraProvider = ({ children }) => {
   return (
     <CameraContext.Provider value={contextValue}>
       {children}
-      {/* CameraScanner is mounted here so it shares the provider's lifetime,
-          but only rendered when the dashboard requests it. */}
-      {isScannerVisible && (
-        <CameraScanner onScanComplete={handleScanComplete} />
-      )}
+
+      {/*
+        Portal renders the camera scanner directly onto document.body.
+        This decouples it from the component tree — closing a Dashboard modal
+        or any parent re-render cannot unmount it. Only closeScanner() can.
+      */}
+      {isScannerVisible &&
+        createPortal(
+          <CameraScanner onScanComplete={handleScanComplete} />,
+          document.body
+        )}
     </CameraContext.Provider>
   );
 };
@@ -99,15 +95,10 @@ export const CameraProvider = ({ children }) => {
 // ---------------------------------------------------------------------------
 
 /**
- * Consume the CameraContext from any descendant of <CameraProvider>.
+ * Consume CameraContext from any descendant of <CameraProvider>.
  *
  * @returns {{
- *   lastScanResult: {
- *     identified_plant_id: string,
- *     confidence_score: number,
- *     is_native_to_region: boolean,
- *     requires_rare_highlight: boolean
- *   } | null,
+ *   lastScanResult: Object | null,
  *   isScannerVisible: boolean,
  *   clearScanResult: () => void,
  *   openScanner:     () => void,

@@ -6,7 +6,9 @@
  *  2. Reads the canvas as a base64 JPEG string (data-URI prefix stripped)
  *
  * Returns:
- *  captureFrame  – async () => string (base64 JPEG, no prefix)
+ *  captureFrame  – async () => string | null
+ *                  Returns null (instead of throwing) when the video is not
+ *                  yet ready — callers should skip the scan attempt gracefully.
  *  isCapturing   – true while the canvas draw is in progress
  */
 
@@ -15,15 +17,17 @@ import { useRef, useState, useCallback } from "react";
 const JPEG_QUALITY = 0.9;
 
 export default function useCaptureFrame(videoRef) {
-  // Persistent off-screen canvas — reused on every capture (more performant
-  // than creating a new element each call as done in the V3 teammate version).
+  // Persistent off-screen canvas — reused on every capture
   const canvasRef = useRef(document.createElement("canvas"));
   const [isCapturing, setIsCapturing] = useState(false);
 
   const captureFrame = useCallback(async () => {
     const video = videoRef.current;
-    if (!video || video.readyState < 2) {
-      throw new Error("captureFrame: video element is not ready.");
+
+    // Return null instead of throwing — callers skip gracefully.
+    // readyState >= 2 (HAVE_CURRENT_DATA) means at least one frame is decoded.
+    if (!video || video.readyState < 2 || video.videoWidth === 0) {
+      return null;
     }
 
     setIsCapturing(true);
