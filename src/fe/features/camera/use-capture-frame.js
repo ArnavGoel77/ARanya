@@ -19,22 +19,20 @@ export default function useCaptureFrame(videoRef) {
   const [isCapturing, setIsCapturing] = useState(false);
 
   const captureFrame = useCallback(async () => {
-    const video = videoRef.current;
-    if (!video || video.readyState < 2) {
-      throw new Error("captureFrame: video element is not ready.");
-    }
-
+    if (!videoRef.current) return null;
+    
     setIsCapturing(true);
     try {
-      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      const canvas = document.createElement("canvas");
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-
       const ctx = canvas.getContext("2d");
+      
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      // Strip "data:image/jpeg;base64," prefix — API expects raw base64
-      const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+      
+      // Return base64 string without the prefix
       return dataUrl.split(",")[1];
     } finally {
       setIsCapturing(false);
