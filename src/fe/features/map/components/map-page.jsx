@@ -73,7 +73,7 @@ const MapContent = () => {
     setLoading(true);
     try {
       // Connects to Domain 4 User Discoveries API
-      const response = await fetch("http://localhost:5000/api/v1/users/usr_99823/discoveries");
+      const response = await fetch("/api/v1/users/usr_99823/discoveries");
       if (response.ok) {
         const json = await response.json();
         if (json.data && Array.isArray(json.data.discoveries)) {
