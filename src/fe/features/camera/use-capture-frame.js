@@ -1,43 +1,61 @@
 /**
  * use-capture-frame.js
  *
- * Custom React hook — extracts a single JPEG frame from a live <video> element
- * by drawing it onto an off-screen <canvas> and returning a base64 data URL.
+ * Extracts a single JPEG frame from a live <video> element:
+ *  1. Draws the current video frame onto an off-screen <canvas>
+ *  2. Reads the canvas as a base64 JPEG string (data-URI prefix stripped)
  *
  * Returns:
- *  - captureFrame : async () => string — resolves with base64 JPEG data
- *  - isCapturing  : boolean — true while the canvas draw is in progress
- *
- * TODO (implementation phase):
- *  - Accept videoRef as a parameter
- *  - Draw videoRef.current to a canvas via CanvasRenderingContext2D.drawImage
- *  - Return canvas.toDataURL("image/jpeg", 0.9).split(",")[1] (strip prefix)
+ *  captureFrame  – async () => string | null
+ *                  Returns null (instead of throwing) when the video is not
+ *                  yet ready — callers should skip the scan attempt gracefully.
+ *  isCapturing   – true while the canvas draw is in progress
  */
 
-import { useState, useCallback } from "react";
+import { useRef, useState, useCallback } from "react";
 
-/**
- * @param {React.RefObject<HTMLVideoElement>} videoRef
- * @returns {{ captureFrame: () => Promise<string>, isCapturing: boolean }}
- */
+const JPEG_QUALITY = 0.8;
+const MAX_DIMENSION = 512;
+
 export default function useCaptureFrame(videoRef) {
+  // Persistent off-screen canvas — reused on every capture
+  const canvasRef = useRef(document.createElement("canvas"));
   const [isCapturing, setIsCapturing] = useState(false);
 
   const captureFrame = useCallback(async () => {
-    if (!videoRef.current) return null;
-    
+    const video = videoRef.current;
+
+    // Return null instead of throwing — callers skip gracefully.
+    // readyState >= 2 (HAVE_CURRENT_DATA) means at least one frame is decoded.
+    if (!video || video.readyState < 2 || video.videoWidth === 0) {
+      return null;
+    }
+
     setIsCapturing(true);
     try {
-      const video = videoRef.current;
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      let width = video.videoWidth;
+      let height = video.videoHeight;
+
+      // Scale down to prevent HTTP 413 Payload Too Large and improve latency
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        if (width > height) {
+          height = Math.round((height * MAX_DIMENSION) / width);
+          width = MAX_DIMENSION;
+        } else {
+          width = Math.round((width * MAX_DIMENSION) / height);
+          height = MAX_DIMENSION;
+        }
+      }
+
+      const canvas = canvasRef.current;
+      canvas.width = width;
+      canvas.height = height;
+
       const ctx = canvas.getContext("2d");
-      
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-      
-      // Return base64 string without the prefix
+      ctx.drawImage(video, 0, 0, width, height);
+
+      // Strip "data:image/jpeg;base64," prefix — API expects raw base64
+      const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
       return dataUrl.split(",")[1];
     } finally {
       setIsCapturing(false);

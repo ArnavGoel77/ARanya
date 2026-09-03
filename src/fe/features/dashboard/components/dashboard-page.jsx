@@ -7,8 +7,9 @@ import { askBotanistGuide } from "@fe/features/botanist_chat/services/chat-servi
 import "./dashboard-page.css";
 
 export default function DashboardPage() {
-  onst [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const closeCamera = () => setIsCameraOpen(false);
   
   // State for Chat Window Modal
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -68,6 +69,18 @@ export default function DashboardPage() {
           plantContext="Phyllanthus emblica"
           initialResponse={initialChatData}
         />
+        
+        {/* Fullscreen Camera Overlay */}
+        {isCameraOpen && (
+          <div className="fullscreen-overlay">
+            <button className="close-camera-button" onClick={closeCamera}>
+              <X size={24} color="#ffffff" />
+            </button>
+            <CameraScanner 
+              onScanComplete={(result) => console.log("Scan complete:", result)} 
+            />
+          </div>
+        )}
       </main>
     </div>
   );

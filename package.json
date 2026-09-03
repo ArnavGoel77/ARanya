@@ -7,20 +7,30 @@
     "dev:frontend": "vite",
     "dev:backend": "nodemon src/be/index.js",
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:vercel": "vercel dev",
     "build": "vite build",
     "start": "node src/be/index.js"
   },
   "dependencies": {
+    "@google/genai": "^2.20.0",
+    "@tensorflow/tfjs": "^4.22.0",
+    "@vis.gl/react-google-maps": "^1.9.0",
+    "archiver": "^7.0.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "firebase": "^10.12.0",
     "firebase-admin": "^12.1.0",
     "framer-motion": "^11.2.6",
+    "geofire-common": "^6.0.0",
+    "jimp": "^1.6.1",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.378.0",
     "multer": "^1.4.5-lts.1",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-leaflet": "^4.2.1",
+    "react-router-dom": "^7.18.3"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
