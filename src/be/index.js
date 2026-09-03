@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
@@ -6,7 +7,8 @@ const chatRouter = require('./routes/chat/chat-router');
 const locationRouter = require('./routes/location/location-router');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
 
 // Enable CORS so your React frontend (port 5173/3000) can talk to Express (port 5000)
 app.use(cors());
@@ -23,6 +25,3 @@ app.get('/', (req, res) => {
   res.send('ARanya Backend API is running!');
 });
 
-app.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
-});
