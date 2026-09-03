@@ -1,58 +1,43 @@
 import React, { useState } from "react";
-import { Camera, Search, Menu, Sparkles, X, Eye, Info, MessageSquare, Award, MapPin } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 
 import CameraScanner from "@fe/features/camera/camera-scanner";
-import BotanistChatWindow from "@fe/features/botanist_chat/components/BotanistChatWindow";
-import { askBotanistGuide } from "@fe/features/botanist_chat/services/chat-service";
 import "./dashboard-page.css";
 
 export default function DashboardPage() {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const closeCamera = () => setIsCameraOpen(false);
-  
-  // State for Chat Window Modal
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [initialChatData, setInitialChatData] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Trigger Gemini AI & open Chat Window
-  const handleAskGuide = async (e) => {
-    if (e) e.stopPropagation();
-    setIsLoading(true);
-
-    try {
-      const data = await askBotanistGuide(
-        "Phyllanthus emblica",
-        "Can I grow this plant in my home garden in Vellore?"
-      );
-      setInitialChatData(data);
-      setIsChatOpen(true);
-    } catch (error) {
-      console.error("Failed to fetch botanist advice:", error);
-      alert("Error contacting Gemini AI server. Check backend terminal.");
-    } finally {
-      setIsLoading(false);    }
-  };
 
   return (
     <div className="dashboard-layout">
       <main className="dashboard-container">
-        {/* Species Card */}
-        <div className="card-container cursor-pointer" onClick={() => setIsCameraOpen(true)}>
+        {/* ── Hero Text ───────────────────────────────────────────────── */}
+        <section className="hero-section">
+          <span className="sub-tag">TODAY'S DISCOVERY</span>
+          <h1 className="main-title">
+            Living biodiversity <span className="status-dot" />
+          </h1>
+          <p className="status-text">Vellore, Tamil Nadu · AI active</p>
+        </section>
+
+        {/* ── Species Card ────────────────────────────────────────────── */}
+        <div className="card-container" onClick={() => setIsCameraOpen(true)}>
           <img
             src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&q=80"
             alt="Phyllanthus emblica"
             className="card-image"
           />
 
-          <button 
-            className="ask-button relative z-20" 
-            onClick={handleAskGuide}
-            disabled={isLoading}
+          {/* "Ask the guide" opens the global chat via the sidebar's state —
+              the global App.jsx handles it, so we use a custom event here */}
+          <button
+            className="ask-button"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.dispatchEvent(new CustomEvent("aranya:open-chat"));
+            }}
           >
-            <Sparkles size={16} color="#4a5d4e" />
-            <span>{isLoading ? "Consulting AI..." : "Ask the guide"}</span>
+            <Sparkles size={15} color="#4a5d4e" />
+            <span>Ask the guide</span>
           </button>
 
           <div className="card-footer">
@@ -61,27 +46,19 @@ export default function DashboardPage() {
             <p className="common-name">Indian gooseberry · Amla</p>
           </div>
         </div>
-
-        {/* Interactive Botanist Chat Window Overlay */}
-        <BotanistChatWindow
-          isOpen={isChatOpen}
-          onClose={() => setIsChatOpen(false)}
-          plantContext="Phyllanthus emblica"
-          initialResponse={initialChatData}
-        />
-        
-        {/* Fullscreen Camera Overlay */}
-        {isCameraOpen && (
-          <div className="fullscreen-overlay">
-            <button className="close-camera-button" onClick={closeCamera}>
-              <X size={24} color="#ffffff" />
-            </button>
-            <CameraScanner 
-              onScanComplete={(result) => console.log("Scan complete:", result)} 
-            />
-          </div>
-        )}
       </main>
+
+      {/* ── Fullscreen Camera Overlay ────────────────────────────────── */}
+      {isCameraOpen && (
+        <div className="fullscreen-overlay">
+          <button className="close-camera-button" onClick={() => setIsCameraOpen(false)}>
+            <X size={24} color="#ffffff" />
+          </button>
+          <CameraScanner
+            onScanComplete={(result) => console.log("Scan complete:", result)}
+          />
+        </div>
+      )}
     </div>
   );
 }

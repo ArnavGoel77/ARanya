@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
-import { Navigation, Info, RefreshCw } from "lucide-react";
+import { Info, RefreshCw } from "lucide-react";
 import { MapProvider } from "../context/map-context";
 
 // Custom Marker Icons
@@ -107,7 +107,7 @@ const MapContent = () => {
       padding: "1.5rem",
       boxSizing: "border-box"
     }}>
-      {/* Header */}
+      {/* Header row: title + refresh */}
       <header style={{
         display: "flex",
         justifyContent: "space-between",
@@ -123,15 +123,15 @@ const MapContent = () => {
             fontFamily: "monospace",
             textTransform: "uppercase"
           }}>
-            Domain 4 & 5 · Discovery Map
+            Species Map
           </span>
           <h1 style={{
             margin: "0.25rem 0 0 0",
-            fontSize: "1.75rem",
+            fontSize: "1.5rem",
             fontWeight: "normal",
             color: "#2a3e34"
           }}>
-            🗺️ Identified Plants Location Map
+            🗺️ Identified Plants
           </h1>
         </div>
 
