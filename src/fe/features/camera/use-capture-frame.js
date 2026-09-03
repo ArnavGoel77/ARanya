@@ -54,8 +54,8 @@ export default function useCaptureFrame(videoRef) {
       const ctx = canvas.getContext("2d");
       ctx.drawImage(video, 0, 0, width, height);
 
-      // Strip "data:image/jpeg;base64," prefix — API expects raw base64
-      const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+      // Strip "data:image/png;base64," prefix — API expects raw base64
+      const dataUrl = canvas.toDataURL("image/png");
       return dataUrl.split(",")[1];
     } finally {
       setIsCapturing(false);

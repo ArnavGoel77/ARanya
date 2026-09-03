@@ -2,8 +2,6 @@ const express = require('express');
 const router = express.Router();
 const { GoogleGenAI } = require('@google/genai');
 const { buildBotanistPrompt } = require('./botanist-prompt');
-const { GoogleGenAI } = require('@google/genai');
-
 // Initialize the Gemini client. It will automatically use the GEMINI_API_KEY environment variable.
 const ai = new GoogleGenAI({});
 

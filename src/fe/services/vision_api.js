@@ -49,10 +49,10 @@ export async function identifyPlant({ imageData, captureLocation, deviceTimestam
   for (let i = 0; i < byteString.length; i++) {
     ia[i] = byteString.charCodeAt(i);
   }
-  const blob = new Blob([ab], { type: "image/jpeg" });
+  const blob = new Blob([ab], { type: "image/png" });
 
   const formData = new FormData();
-  formData.append("image_data", blob, "capture.jpg");
+  formData.append("image_data", blob, "capture.png");
   formData.append("capture_location", JSON.stringify({
     latitude: captureLocation.latitude,
     longitude: captureLocation.longitude,

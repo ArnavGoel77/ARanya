@@ -1,0 +1,238 @@
+/* =========================================================
+   app-layout.css — Global top bar + sidebar styles
+   ========================================================= */
+
+/* ── Global Top Bar ── */
+.agl-topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 900;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  background: #f5f3eb;
+  border-bottom: 1px solid rgba(42, 62, 52, 0.1);
+  box-sizing: border-box;
+  /* subtle shadow so it feels elevated */
+  box-shadow: 0 1px 8px rgba(42, 62, 52, 0.06);
+}
+
+.agl-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.agl-hamburger {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.agl-hamburger:hover {
+  background: rgba(42, 62, 52, 0.08);
+}
+
+.agl-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.agl-brand-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #2a3e34;
+  color: #ffffff;
+  font-size: 0.825rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.agl-brand-name {
+  font-family: monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #2a3e34;
+}
+
+.agl-profile-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(42, 62, 52, 0.18);
+  background: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.agl-profile-btn:hover {
+  background: rgba(42, 62, 52, 0.08);
+}
+
+/* ── Page Content (offset for fixed topbar) ── */
+.agl-page-content {
+  padding-top: 56px; /* matches topbar height */
+  min-height: 100vh;
+  background: #f5f3eb;
+  box-sizing: border-box;
+}
+
+/* ── Sidebar Overlay ── */
+.agl-sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(10, 20, 15, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  display: flex;
+  animation: agl-fade-in 0.18s ease;
+}
+
+@keyframes agl-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.agl-sidebar {
+  width: 290px;
+  max-width: 85vw;
+  height: 100%;
+  padding: 1.25rem 1rem;
+  background: #ede9dc;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-sizing: border-box;
+  animation: agl-slide-in 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes agl-slide-in {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
+.agl-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(42, 62, 52, 0.1);
+}
+
+.agl-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(42, 62, 52, 0.12);
+  background: rgba(255,255,255,0.6);
+  color: #2a3e34;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.agl-close-btn:hover {
+  background: rgba(42, 62, 52, 0.1);
+}
+
+/* ── Sidebar Nav Buttons ── */
+.agl-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.agl-feature-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  width: 100%;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid rgba(42, 62, 52, 0.1);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: left;
+}
+
+.agl-feature-btn:hover {
+  background: rgba(42, 62, 52, 0.06);
+  transform: translateX(3px);
+}
+
+.agl-feature-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 0.625rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.14);
+}
+
+.agl-feature-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.agl-feature-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: sans-serif;
+  color: #2a3e34;
+  line-height: 1.2;
+}
+
+.agl-feature-desc {
+  font-size: 0.7rem;
+  font-family: sans-serif;
+  color: #7a8f82;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+/* ── Sidebar Footer ── */
+.agl-sidebar-footer {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: monospace;
+  font-size: 0.7rem;
+  color: #a08355;
+  letter-spacing: 0.5px;
+  padding: 0.5rem 0;
+}
