@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { GoogleGenAI } = require('@google/genai');
 const { buildBotanistPrompt } = require('./botanist-prompt');
 const { GoogleGenAI } = require('@google/genai');
 
@@ -13,7 +14,16 @@ const ai = new GoogleGenAI({});
 router.post('/botanist', async (req, res) => {
   try {
     const { user_id, current_plant_context, message } = req.body;
-    
+    if (!process.env.GEMINI_API_KEY) {
+      console.error("❌ GEMINI_API_KEY is missing from process.env!");
+      return res.status(500).json({ 
+        success: false, 
+        error: "GEMINI_API_KEY is not configured on the server." 
+      });
+    }
+
+    // Initialize SDK inside or re-use instance safely
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     // Prepare the prompt for the LLM
     const llmPrompt = buildBotanistPrompt(current_plant_context, message);
     
@@ -46,9 +56,10 @@ router.post('/botanist', async (req, res) => {
       success: true,
       data: {
         reply_text: parsedResponse.reply_text,
-        suggested_followup_queries: parsedResponse.suggested_followup_queries
+        suggested_followup_queries: parsedResponse.suggested_followup_queries || []
       }
     });
+
   } catch (error) {
     console.error('Error processing chat:', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
