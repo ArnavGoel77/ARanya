@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, X, Camera } from "lucide-react";
 
 import CameraScanner from "@fe/features/camera/camera-scanner";
 import "./dashboard-page.css";
@@ -26,6 +26,10 @@ export default function DashboardPage() {
             alt="Phyllanthus emblica"
             className="card-image"
           />
+
+          <div className="camera-trigger-overlay">
+            <Camera size={32} color="#ffffff" strokeWidth={1.5} />
+          </div>
 
           {/* "Ask the guide" opens the global chat via the sidebar's state —
               the global App.jsx handles it, so we use a custom event here */}

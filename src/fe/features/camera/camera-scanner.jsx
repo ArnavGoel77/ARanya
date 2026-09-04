@@ -29,6 +29,7 @@ import useCameraStream from "./use-camera-stream.js";
 import useCaptureFrame from "./use-capture-frame.js";
 import useArTracking from "./use-ar-tracking.js";
 import { identifyPlant, getArMetadata } from "../../services/vision_api.js";
+import PlantDetailSheet from "./plant-detail-sheet.jsx";
 
 /** Auto-scan interval (ms). */
 const AUTO_SCAN_INTERVAL_MS = 2000;
@@ -67,6 +68,7 @@ export default function CameraScanner({ onScanComplete }) {
   const { offset, requestPermission } = useArTracking(scanState === SCAN_STATE.SUCCESS);
   const [scanError, setScanError] = useState(null);
   const [countdown, setCountdown] = useState(AUTO_SCAN_INTERVAL_MS / 1000);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   /** The `data` object from the last successful /vision/identify response. */
   const [identifyResult, setIdentifyResult] = useState(null);
@@ -214,6 +216,20 @@ export default function CameraScanner({ onScanComplete }) {
     return () => clearTimeout(autoResumeTimerRef.current);
   }, [scanState]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Pause the auto-resume countdown while the detail sheet is open
+  useEffect(() => {
+    if (isDetailOpen) {
+      // Cancel any pending auto-resume while user is reading the detail sheet
+      clearTimeout(autoResumeTimerRef.current);
+    } else if (scanState === SCAN_STATE.SUCCESS) {
+      // Re-arm the auto-resume when the sheet is closed (fresh 8 s window)
+      autoResumeTimerRef.current = setTimeout(() => {
+        resumeScanning();
+      }, AUTO_RESUME_MS);
+    }
+    return () => clearTimeout(autoResumeTimerRef.current);
+  }, [isDetailOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Derived display values ─────────────────────────────────────────────────
 
   const isBusy =
@@ -262,56 +278,39 @@ export default function CameraScanner({ onScanComplete }) {
         />
       </div>
 
-      {/* ── AR Overlay Result Card ── */}
+      {/* ── AR Overlay: minimal tappable name chip ── */}
       {scanState === SCAN_STATE.SUCCESS && identifyResult && (
-        <div className="absolute inset-x-4 top-48 z-20 rounded-2xl shadow-2xl overflow-hidden pointer-events-auto"
-          style={{ 
-            backdropFilter: "blur(16px)", 
-            background: "rgba(0,0,0,0.75)",
+        <div
+          className="absolute inset-x-6 top-48 z-20 flex justify-center pointer-events-auto"
+          style={{
             transform: `translate(${offset.x}px, ${offset.y}px)`,
-            transition: "transform 0.1s ease-out"
+            transition: "transform 0.2s ease-out",
           }}
         >
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 pt-4 pb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🌿</span>
-              <span className="text-sm font-semibold text-muted-light">
-                {arMetadata?.common_name ?? "Unknown Species"}
-              </span>
-            </div>
+          <button
+            id="ar-plant-name-chip"
+            onClick={() => setIsDetailOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-2xl"
+            style={{
+              backdropFilter: "blur(20px)",
+              background: "rgba(10, 21, 16, 0.82)",
+              border: "1px solid rgba(22, 101, 52, 0.55)",
+              fontFamily: "'Inter', sans-serif",
+            }}
+            aria-label="View plant details"
+          >
+            <span className="text-base">🌿</span>
+            <span className="text-sm font-semibold text-muted-light">
+              {arMetadata?.common_name ?? "Unknown Species"}
+            </span>
             {identifyResult.requires_rare_highlight && (
-              <span className="text-xs font-bold px-2 py-0.5 rounded-xl bg-accent text-muted-light">
+              <span className="text-xs font-bold px-1.5 py-0.5 rounded-xl bg-accent text-muted-light">
                 RARE
               </span>
             )}
-          </div>
-
-          <div className="px-4 pb-2">
-            <p className="text-xs text-muted-dark italic">
-              {arMetadata?.scientific_name ?? identifyResult.identified_plant_id}
-            </p>
-          </div>
-
-          {/* Details grid */}
-          {arMetadata && (
-            <div className="px-4 pb-3 flex flex-col gap-1">
-              <InfoRow label="Family"  value={arMetadata.plant_family} />
-              <InfoRow label="Region"  value={arMetadata.native_region} />
-              <InfoRow label="Status"  value={arMetadata.conservation_status} highlight />
-              <InfoRow
-                label="Confidence"
-                value={`${(identifyResult.confidence_score * 100).toFixed(0)}%`}
-              />
-            </div>
-          )}
-
-          {/* Ecological importance snippet */}
-          {arMetadata?.ecological_importance && (
-            <p className="px-4 pb-3 text-xs text-muted-dark leading-relaxed line-clamp-2">
-              {arMetadata.ecological_importance}
-            </p>
-          )}
+            {/* Tap indicator */}
+            <span className="text-xs text-muted-dark ml-1">›</span>
+          </button>
         </div>
       )}
 
@@ -382,19 +381,15 @@ export default function CameraScanner({ onScanComplete }) {
           </button>
         )}
       </div>
+      {/* Plant Detail Sheet */}
+      <PlantDetailSheet
+        arMetadata={arMetadata}
+        identifyResult={identifyResult}
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+      />
     </div>
   );
 }
 
-// ── Sub-components ──────────────────────────────────────────────────────────
 
-function InfoRow({ label, value, highlight = false }) {
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <span className="text-xs text-muted-dark">{label}</span>
-      <span className={`text-xs font-semibold ${highlight ? "text-accent" : "text-muted-light"}`}>
-        {value}
-      </span>
-    </div>
-  );
-}

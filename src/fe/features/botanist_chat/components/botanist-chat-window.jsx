@@ -3,7 +3,7 @@ import { Send, Sparkles, X, Bot, User, Loader2, ChevronRight } from "lucide-reac
 import { askBotanistGuide } from "../services/chat-service";
 import "./botanist-chat-window.css";
 
-export default function BotanistChatWindow({ isOpen, onClose }) {
+export default function BotanistChatWindow({ isOpen, onClose, plantContext }) {
   const [messages, setMessages] = useState([]);
   const [followups, setFollowups] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -12,29 +12,43 @@ export default function BotanistChatWindow({ isOpen, onClose }) {
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Reset state when the chat window opens/closes
+  // Reset state and seed welcome message when the chat window opens
   useEffect(() => {
     if (isOpen) {
       setMessages([]);
       setFollowups([]);
       setInputMessage("");
       setHasStarted(false);
-      // Welcome message after a short delay
+
+      // Tailor welcome message and follow-ups to the current plant context
+      const plantName = plantContext?.common_name;
+      const welcomeText = plantName
+        ? `Hello! I'm your AI Botanical Guide. You've just identified **${plantName}** (*${plantContext.scientific_name}*). What would you like to know about it? 🌿`
+        : `Hello! I'm your AI Botanical Guide. Ask me anything about plants — identification, cultivation, ecology, conservation, and more. I'm here to help! 🌿`;
+
+      const contextFollowups = plantName
+        ? [
+            `What is the ecological role of ${plantName}?`,
+            `Is ${plantName} suitable for home cultivation?`,
+            `What are the conservation efforts for ${plantName}?`,
+          ]
+        : [
+            "What plants are native to South India?",
+            "How do I identify a plant I found?",
+            "Which plants are best for home gardening in India?",
+          ];
+
       setTimeout(() => {
         setMessages([{
           id: Date.now(),
           sender: "botanist",
-          text: `Hello! I'm your AI Botanical Guide. Ask me anything about plants — identification, cultivation, ecology, conservation, and more. I'm here to help! 🌿`,
+          text: welcomeText,
           isWelcome: true,
         }]);
-        setFollowups([
-          "What plants are native to South India?",
-          "How do I identify a plant I found?",
-          "Which plants are best for home gardening in India?",
-        ]);
+        setFollowups(contextFollowups);
       }, 300);
     }
-  }, [isOpen]);
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -61,7 +75,8 @@ export default function BotanistChatWindow({ isOpen, onClose }) {
     setIsLoading(true);
 
     try {
-      const data = await askBotanistGuide("", query);
+      const plantId = plantContext?.plant_id ?? "";
+      const data = await askBotanistGuide(plantId, query);
       setMessages([
         ...updatedMessages,
         { id: Date.now() + 1, sender: "botanist", text: data.reply_text },
@@ -107,8 +122,11 @@ export default function BotanistChatWindow({ isOpen, onClose }) {
           </button>
         </div>
 
+
         {/* ── Messages Body ── */}
         <div className="bcw-messages">
+          {/* Rich plant data card rendered as first message when context is available */}
+          {plantContext && <PlantContextCard plantContext={plantContext} />}
           {messages.map((msg) => {
             const isBot = msg.sender === "botanist";
             return (
@@ -193,3 +211,117 @@ export default function BotanistChatWindow({ isOpen, onClose }) {
     </div>
   );
 }
+
+// ── PlantContextCard ─────────────────────────────────────────────────────────
+// Rich plant data card rendered as the first item in the chat message body.
+// Uses the same light-theme colours as the rest of the chat sheet.
+
+const STATUS_COLORS = {
+  "Critically Endangered": { bg: "#fff1f0", border: "#f5a09a", text: "#c0392b" },
+  "Endangered":            { bg: "#fff7e6", border: "#f5c97a", text: "#a05f00" },
+  "Vulnerable":            { bg: "#fffbe6", border: "#ffe58f", text: "#7a6000" },
+  "Threatened":            { bg: "#fff7e6", border: "#f5c97a", text: "#a05f00" },
+  "Native":                { bg: "#f0faf2", border: "#7cc48a", text: "#1a6b30" },
+  "default":               { bg: "#f0faf2", border: "#b7dbbf", text: "#2a5e38" },
+};
+
+function DataRow({ label, value }) {
+  if (!value) return null;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "2px", paddingBottom: "0.55rem", borderBottom: "1px solid rgba(42,62,52,0.07)", marginBottom: "0.55rem" }}>
+      <span style={{ fontSize: "0.65rem", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#a08355" }}>
+        {label}
+      </span>
+      <span style={{ fontSize: "0.82rem", color: "#1a2e26", lineHeight: 1.45, fontFamily: "sans-serif" }}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function PlantContextCard({ plantContext: p }) {
+  const statusStyle = STATUS_COLORS[p.conservation_status] ?? STATUS_COLORS["default"];
+
+  return (
+    <div
+      style={{
+        background: "#ffffff",
+        border: "1px solid rgba(42,62,52,0.12)",
+        borderRadius: "1rem",
+        overflow: "hidden",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+        marginBottom: "0.25rem",
+        fontFamily: "sans-serif",
+      }}
+      aria-label="Identified plant details"
+    >
+      {/* Card header */}
+      <div style={{ background: "linear-gradient(135deg, #edf5ee 0%, #f5f3eb 100%)", padding: "0.85rem 1rem 0.75rem", borderBottom: "1px solid rgba(42,62,52,0.08)" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" }}>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: "0.65rem", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4a7c59", marginBottom: "0.25rem" }}>
+              🌿 Identified Plant
+            </p>
+            <h3 style={{ margin: 0, fontSize: "1rem", fontFamily: "serif", fontWeight: 700, color: "#1a2e26", lineHeight: 1.2 }}>
+              {p.common_name}
+            </h3>
+            {p.scientific_name && (
+              <p style={{ margin: "0.2rem 0 0", fontSize: "0.8rem", fontStyle: "italic", color: "#5a7a62", lineHeight: 1.3 }}>
+                {p.scientific_name}
+              </p>
+            )}
+          </div>
+          {p.conservation_status && (
+            <span style={{
+              flexShrink: 0,
+              fontSize: "0.65rem",
+              fontWeight: 700,
+              fontFamily: "monospace",
+              letterSpacing: "0.05em",
+              textTransform: "uppercase",
+              padding: "0.25rem 0.55rem",
+              borderRadius: "9999px",
+              background: statusStyle.bg,
+              border: `1px solid ${statusStyle.border}`,
+              color: statusStyle.text,
+              whiteSpace: "nowrap",
+            }}>
+              {p.conservation_status}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Details body */}
+      <div style={{ padding: "0.85rem 1rem 0.4rem" }}>
+        <DataRow label="Plant Family"   value={p.plant_family} />
+        <DataRow label="Native Region"  value={p.native_region} />
+
+        {p.ecological_importance && (
+          <div style={{ paddingBottom: "0.55rem", borderBottom: "1px solid rgba(42,62,52,0.07)", marginBottom: "0.55rem" }}>
+            <span style={{ fontSize: "0.65rem", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#a08355", display: "block", marginBottom: "0.25rem" }}>
+              Ecological Importance
+            </span>
+            <p style={{ margin: 0, fontSize: "0.8rem", color: "#2a3e34", lineHeight: 1.5, fontFamily: "sans-serif" }}>
+              {p.ecological_importance}
+            </p>
+          </div>
+        )}
+
+        {p.threats && (
+          <div style={{ paddingBottom: "0.55rem", borderBottom: "1px solid rgba(42,62,52,0.07)", marginBottom: "0.55rem" }}>
+            <span style={{ fontSize: "0.65rem", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#c0392b", display: "block", marginBottom: "0.25rem" }}>
+              ⚠ Threats
+            </span>
+            <p style={{ margin: 0, fontSize: "0.8rem", color: "#2a3e34", lineHeight: 1.5, fontFamily: "sans-serif" }}>
+              {p.threats}
+            </p>
+          </div>
+        )}
+
+        <DataRow label="Conservation Practices" value={p.conservation_best_practices} />
+        <DataRow label="Historical Context"     value={p.historical_context} />
+      </div>
+    </div>
+  );
+}
