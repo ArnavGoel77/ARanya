@@ -9,6 +9,7 @@ import { Menu, X, MessageSquare, MapPin, Award, Camera, Leaf, User } from "lucid
 import DashboardPage from "./features/dashboard/components/dashboard-page";
 import MapPage from "@fe/features/map/components/map-page";
 import BotanistChatWindow from "@fe/features/botanist_chat/components/botanist-chat-window";
+import GamificationPage from "@fe/features/gamification/components/gamification-page";
 import "./app-layout.css";
 
 function AppLayout() {
@@ -67,7 +68,7 @@ function AppLayout() {
                 </div>
               </button>
 
-              <button className="agl-feature-btn" onClick={() => goTo("/")}>
+              <button className="agl-feature-btn" onClick={() => goTo("/achievements")}>
                 <div className="agl-feature-icon" style={{ background: "linear-gradient(135deg, #8a3e2a, #c07050)" }}>
                   <Award size={16} color="#e5dcc5" />
                 </div>
@@ -107,7 +108,7 @@ function AppLayout() {
             <span className="agl-brand-name">ARanya</span>
           </button>
         </div>
-        <button className="agl-profile-btn" aria-label="Profile">
+        <button className="agl-profile-btn" onClick={() => goTo("/achievements")} aria-label="Profile">
           <User size={18} color="#2a3e34" />
         </button>
       </header>
@@ -117,6 +118,7 @@ function AppLayout() {
         <Routes>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/map" element={<MapPage />} />
+          <Route path="/achievements" element={<GamificationPage />} />
         </Routes>
       </main>
 
