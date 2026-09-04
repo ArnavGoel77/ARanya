@@ -17,7 +17,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 import {
-  Menu, X, MessageSquare, MapPin, Award, Camera, Leaf, User, LogOut
+  Menu, X, MessageSquare, MapPin, Award, Camera, Leaf, User, LogOut, Download
 } from "lucide-react";
 
 /* ── Lazy-load heavy features so a crash in one doesn't kill the other ── */
@@ -157,7 +157,8 @@ function ChatHistoryList() {
 /* ─── Main app shell (sidebar + topbar + routes) ─────────────────────────── */
 function AppLayout() {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, currentUser } = useAuth();
+  const { isInstallable, installApp } = usePWA();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [activeThreadId, setActiveThreadId] = useState(null);
@@ -182,7 +183,7 @@ function AppLayout() {
           <aside className="agl-sidebar" onClick={(e) => e.stopPropagation()}>
             <div className="agl-sidebar-header">
               <div className="agl-sidebar-brand">
-                <div className="agl-brand-badge">A</div>
+                <img src="/logo.png" alt="ARanya" style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '4px' }} />
                 <span className="agl-brand-name">ARanya</span>
               </div>
               <button className="agl-close-btn" onClick={closeSidebar} aria-label="Close menu">
@@ -239,7 +240,34 @@ function AppLayout() {
               <ChatHistoryList />
             </div>
 
-            <div className="agl-sidebar-footer">
+            {isInstallable && (
+              <div style={{ padding: "1rem 1.5rem", marginTop: "auto" }}>
+                <button 
+                  onClick={installApp}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "0.5rem",
+                    padding: "0.75rem",
+                    background: "linear-gradient(135deg, #2a3e34, #4a7c59)",
+                    color: "#e5dcc5",
+                    border: "none",
+                    borderRadius: "10px",
+                    cursor: "pointer",
+                    fontSize: "0.85rem",
+                    fontWeight: "600",
+                    transition: "all 0.2s ease"
+                  }}
+                >
+                  <Download size={16} />
+                  Install App
+                </button>
+              </div>
+            )}
+
+            <div className="agl-sidebar-footer" style={{ marginTop: isInstallable ? "0.5rem" : "auto" }}>
               <Leaf size={14} color="#a08355" />
               <span>ARanya · Biodiversity OS</span>
             </div>
@@ -254,7 +282,7 @@ function AppLayout() {
             <Menu size={22} color="#2a3e34" />
           </button>
           <button className="agl-brand" onClick={() => goTo("/app")} aria-label="Go home">
-            <div className="agl-brand-badge">A</div>
+            <img src="/logo.png" alt="ARanya" style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '4px' }} />
             <span className="agl-brand-name">ARanya</span>
           </button>
         </div>
@@ -282,7 +310,15 @@ function AppLayout() {
             <span className="hidden-on-mobile">Sign Out</span>
           </button>
           <button className="agl-profile-btn" onClick={() => goTo("/app/achievements")} aria-label="Profile">
-            <User size={18} color="#2a3e34" />
+            {currentUser?.photoURL ? (
+              <img 
+                src={currentUser.photoURL} 
+                alt="Profile" 
+                style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} 
+              />
+            ) : (
+              <User size={18} color="#2a3e34" />
+            )}
           </button>
         </div>
       </header>
@@ -311,6 +347,7 @@ function AppLayout() {
 }
 
 import { AuthProvider, useAuth } from "@fe/contexts/AuthContext";
+import { PWAProvider, usePWA } from "@fe/hooks/usePWA";
 
 /* ─── Protected Route ────────────────────────────────────────────────────── */
 function ProtectedRoute({ children }) {
@@ -325,8 +362,9 @@ function ProtectedRoute({ children }) {
 /* ─── Root with routing ──────────────────────────────────────────────────── */
 export default function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <PWAProvider>
+      <AuthProvider>
+        <Router>
         <ErrorBoundary>
           <Routes>
             {/* Landing page — full-screen DriftWall hero */}
@@ -353,7 +391,8 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </ErrorBoundary>
-      </Router>
-    </AuthProvider>
+        </Router>
+      </AuthProvider>
+    </PWAProvider>
   );
 }
