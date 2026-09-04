@@ -256,7 +256,7 @@ function PlantContextCard({ plantContext: p }) {
       aria-label="Identified plant details"
     >
       {/* Card header */}
-      <div style={{ background: "linear-gradient(135deg, #edf5ee 0%, #f5f3eb 100%)", padding: "0.85rem 1rem 0.75rem", borderBottom: "1px solid rgba(42,62,52,0.08)" }}>
+      <div style={{ background: "linear-gradient(135deg, #edf5ee 0%, #f5f3eb 100%)", padding: "0.85rem 1rem 0.75rem" }}>
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" }}>
           <div style={{ minWidth: 0 }}>
             <p style={{ margin: 0, fontSize: "0.65rem", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4a7c59", marginBottom: "0.25rem" }}>
@@ -291,37 +291,6 @@ function PlantContextCard({ plantContext: p }) {
           )}
         </div>
       </div>
-
-      {/* Details body */}
-      <div style={{ padding: "0.85rem 1rem 0.4rem" }}>
-        <DataRow label="Plant Family"   value={p.plant_family} />
-        <DataRow label="Native Region"  value={p.native_region} />
-
-        {p.ecological_importance && (
-          <div style={{ paddingBottom: "0.55rem", borderBottom: "1px solid rgba(42,62,52,0.07)", marginBottom: "0.55rem" }}>
-            <span style={{ fontSize: "0.65rem", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#a08355", display: "block", marginBottom: "0.25rem" }}>
-              Ecological Importance
-            </span>
-            <p style={{ margin: 0, fontSize: "0.8rem", color: "#2a3e34", lineHeight: 1.5, fontFamily: "sans-serif" }}>
-              {p.ecological_importance}
-            </p>
-          </div>
-        )}
-
-        {p.threats && (
-          <div style={{ paddingBottom: "0.55rem", borderBottom: "1px solid rgba(42,62,52,0.07)", marginBottom: "0.55rem" }}>
-            <span style={{ fontSize: "0.65rem", fontFamily: "monospace", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#c0392b", display: "block", marginBottom: "0.25rem" }}>
-              ⚠ Threats
-            </span>
-            <p style={{ margin: 0, fontSize: "0.8rem", color: "#2a3e34", lineHeight: 1.5, fontFamily: "sans-serif" }}>
-              {p.threats}
-            </p>
-          </div>
-        )}
-
-        <DataRow label="Conservation Practices" value={p.conservation_best_practices} />
-        <DataRow label="Historical Context"     value={p.historical_context} />
-      </div>
     </div>
   );
-}
+}
