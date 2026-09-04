@@ -5,9 +5,10 @@
  */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Leaf, X, ArrowRight, User, Lock, Mail, Eye, EyeOff, ChevronDown } from 'lucide-react';
+import { Leaf, X, ArrowRight, User, Lock, Mail, Eye, EyeOff, ChevronDown, Download } from 'lucide-react';
 import DriftWall from '@fe/components/shared-ui/DriftWall';
 import { useAuth } from '@fe/contexts/AuthContext';
+import { usePWA } from '@fe/hooks/usePWA';
 import './LandingPage.css';
 
 /* ─── Indian native plant images ─────────────────────────────────────────────
@@ -96,6 +97,7 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const [view, setView] = useState(VIEWS.HOME);
   const { loginWithGoogle, signupWithGoogle, setDemoUser, currentUser } = useAuth();
+  const { isInstallable, installApp } = usePWA();
   const [errorMsg, setErrorMsg] = useState("");
 
   const goToApp = () => navigate('/app');
@@ -190,6 +192,16 @@ export default function LandingPage() {
             </p>
 
             <div className="lp-cta-grid">
+              {isInstallable && (
+                <button 
+                  className="lp-btn lp-btn--primary lp-btn--wide" 
+                  style={{ background: "linear-gradient(135deg, #2a3e34, #4a7c59)", border: "none" }} 
+                  onClick={installApp}
+                >
+                  <Download size={16} />
+                  Install Web App
+                </button>
+              )}
               <button className="lp-btn lp-btn--primary" onClick={() => setView(VIEWS.SIGNUP)}>
                 <User size={16} />
                 Sign Up
