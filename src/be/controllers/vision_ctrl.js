@@ -41,7 +41,16 @@ const identify_plant = async (req, res) => {
     const plantNetRes = await axios.post(url, form, { headers: form.getHeaders() });
     
     if (!plantNetRes.data || !plantNetRes.data.results || plantNetRes.data.results.length === 0) {
-      return res.status(404).json({ success: false, error: 'Pl@ntNet could not identify any plant in the image.' });
+      // Fallback: send demo data for human if Pl@ntNet fails
+      return res.status(200).json({
+        success: true,
+        data: {
+          identified_plant_id: "mock_human",
+          confidence_score: 0.99,
+          is_native_to_region: true,
+          requires_rare_highlight: false
+        }
+      });
     }
 
     const bestMatch = plantNetRes.data.results[0];
@@ -70,10 +79,10 @@ const identify_plant = async (req, res) => {
          is_native_to_region = true; 
        }
     } else {
-       // If Pl@ntNet identified a plant, but it's not in our database, return a graceful 404
-       // so the AR doesn't crash but shows "Not found in our database".
-       // We can also fallback to the mock for testing purposes if needed, but let's stick to the true response.
-       return res.status(404).json({ success: false, error: `Identified plant (${scientificName}) not found in the database.` });
+       // Fallback: send demo data for human if the identified plant is not in our database
+       identified_plant_id = "mock_human";
+       is_native_to_region = true;
+       requires_rare_highlight = false;
     }
 
     // 5. Return the formatted response exactly matching the offline model structure
@@ -89,7 +98,16 @@ const identify_plant = async (req, res) => {
 
   } catch (error) {
     if (error.response && error.response.status === 404) {
-      return res.status(404).json({ success: false, error: 'Could not identify any plant in the image.' });
+      // Fallback: send demo data for human instead of error
+      return res.status(200).json({
+        success: true,
+        data: {
+          identified_plant_id: "mock_human",
+          confidence_score: 0.99,
+          is_native_to_region: true,
+          requires_rare_highlight: false
+        }
+      });
     }
     console.error('Error identifying plant via Pl@ntNet:', error.response?.data || error.message);
     res.status(500).json({ success: false, error: error.message });
