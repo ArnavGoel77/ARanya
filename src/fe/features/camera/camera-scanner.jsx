@@ -46,8 +46,8 @@ const SCAN_STATE = Object.freeze({
 });
 
 // SVG ring constants
-const RING_SIZE = 88;
-const RADIUS = 36;
+const RING_SIZE = 64;
+const RADIUS = 28;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 /**
@@ -256,6 +256,18 @@ export default function CameraScanner({ onScanComplete }) {
       style={{ fontFamily: "'Inter', sans-serif" }}
       onClick={requestPermission}
     >
+      <style>{`
+        @keyframes scan-laser {
+          0% { transform: translateY(0); opacity: 0; }
+          10% { opacity: 1; }
+          90% { opacity: 1; }
+          100% { transform: translateY(16rem); opacity: 0; }
+        }
+        @keyframes pop-in {
+          0% { transform: scale(0.9); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
       {/* Live video feed */}
       <video
         ref={videoRef}
@@ -269,13 +281,30 @@ export default function CameraScanner({ onScanComplete }) {
       {/* Viewfinder reticle */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div
-          className="w-56 h-56 rounded-2xl border-2 border-primary"
+          className="relative w-64 h-64"
           style={{
-            opacity: isBusy ? 1 : 0.7,
-            transform: isBusy ? "scale(1.05)" : "scale(1)",
-            transition: "opacity 0.3s ease, transform 0.3s ease",
+            opacity: isBusy ? 1 : 0.6,
+            transform: isBusy ? "scale(1.02)" : "scale(1)",
+            transition: "opacity 0.4s ease, transform 0.4s cubic-bezier(0.17, 0.67, 0.16, 0.99)",
           }}
-        />
+        >
+          {/* Corner brackets */}
+          <div className="absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 rounded-tl-3xl border-primary" style={{ filter: isBusy ? 'drop-shadow(0 0 8px rgba(22, 101, 52, 0.8))' : 'none', transition: 'filter 0.3s' }} />
+          <div className="absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 rounded-tr-3xl border-primary" style={{ filter: isBusy ? 'drop-shadow(0 0 8px rgba(22, 101, 52, 0.8))' : 'none', transition: 'filter 0.3s' }} />
+          <div className="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 rounded-bl-3xl border-primary" style={{ filter: isBusy ? 'drop-shadow(0 0 8px rgba(22, 101, 52, 0.8))' : 'none', transition: 'filter 0.3s' }} />
+          <div className="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 rounded-br-3xl border-primary" style={{ filter: isBusy ? 'drop-shadow(0 0 8px rgba(22, 101, 52, 0.8))' : 'none', transition: 'filter 0.3s' }} />
+          
+          {/* Scanning laser line */}
+          {isBusy && (
+            <div 
+              className="absolute left-0 right-0 h-1 bg-primary rounded-full shadow-[0_0_15px_3px_rgba(22,101,52,0.8)]"
+              style={{
+                animation: 'scan-laser 2s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+                top: 0
+              }}
+            />
+          )}
+        </div>
       </div>
 
       {/* ── AR Overlay: minimal tappable name chip ── */}
@@ -290,12 +319,13 @@ export default function CameraScanner({ onScanComplete }) {
           <button
             id="ar-plant-name-chip"
             onClick={() => setIsDetailOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-2xl"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.3)]"
             style={{
               backdropFilter: "blur(20px)",
-              background: "rgba(10, 21, 16, 0.82)",
-              border: "1px solid rgba(22, 101, 52, 0.55)",
+              background: "rgba(20, 31, 24, 0.85)",
+              border: "1px solid rgba(255, 255, 255, 0.15)",
               fontFamily: "'Inter', sans-serif",
+              animation: "pop-in 0.4s cubic-bezier(0.17, 0.67, 0.16, 0.99)",
             }}
             aria-label="View plant details"
           >
@@ -315,12 +345,13 @@ export default function CameraScanner({ onScanComplete }) {
       )}
 
       {/* ── Bottom HUD ────────────────────────────────────────────────────── */}
-      <div className="relative z-10 flex flex-col items-center gap-4 w-full px-6 py-8 bg-black bg-opacity-50 backdrop-blur-md">
+      <div className="absolute bottom-8 left-6 right-6 z-10 flex flex-col items-center gap-3 px-6 py-5 rounded-[2rem] bg-black/40 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
 
         <p
-          className={`text-sm font-medium tracking-wide ${
-            scanState === SCAN_STATE.ERROR ? "text-accent" : "text-muted-dark"
+          className={`text-xs font-bold tracking-widest uppercase ${
+            scanState === SCAN_STATE.ERROR ? "text-accent" : "text-white/90"
           }`}
+          style={{ textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}
         >
           {statusLabel}
         </p>
@@ -349,18 +380,18 @@ export default function CameraScanner({ onScanComplete }) {
 
             <div
               className="relative z-10 flex items-center justify-center rounded-xl bg-black bg-opacity-60"
-              style={{ width: 56, height: 56 }}
+              style={{ width: 44, height: 44 }}
             >
               {isBusy ? (
-                <svg className="animate-spin text-accent" style={{ width: 28, height: 28 }}
+                <svg className="animate-spin text-accent" style={{ width: 22, height: 22 }}
                   xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-label="Scanning">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                 </svg>
               ) : (
-                <svg className="text-primary" style={{ width: 28, height: 28 }}
+                <svg className="text-primary" style={{ width: 22, height: 22 }}
                   xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                  fill="none" stroke="currentColor" strokeWidth={2}
+                  fill="none" stroke="currentColor" strokeWidth={2.5}
                   strokeLinecap="round" strokeLinejoin="round" aria-label="Camera active">
                   <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
                   <circle cx="12" cy="13" r="4" />
