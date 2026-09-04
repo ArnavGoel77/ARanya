@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Leaf, X, ArrowRight, User, Lock, Mail, Eye, EyeOff, ChevronDown } from 'lucide-react';
 import DriftWall from '@fe/components/shared-ui/DriftWall';
+import { useAuth } from '@fe/contexts/AuthContext';
 import './LandingPage.css';
 
 /* ─── Indian native plant images ─────────────────────────────────────────────
@@ -91,55 +92,41 @@ const PLANT_ITEMS = [
 /* ─── Modal / form states ──────────────────────────────────────────────────── */
 const VIEWS = { HOME: 'home', SIGNUP: 'signup', LOGIN: 'login', ABOUT: 'about' };
 
-/* ─── Password visibility toggle ─────────────────────────────────────────── */
-function PasswordField({ id, label, value, onChange }) {
-  const [show, setShow] = useState(false);
-  return (
-    <div className="lp-field">
-      <label htmlFor={id}>{label}</label>
-      <div className="lp-field-row">
-        <Lock size={15} className="lp-field-icon" />
-        <input
-          id={id}
-          type={show ? 'text' : 'password'}
-          value={value}
-          onChange={onChange}
-          placeholder="••••••••"
-          required
-          autoComplete={id === 'signup-password' ? 'new-password' : 'current-password'}
-        />
-        <button type="button" className="lp-eye-btn" onClick={() => setShow(s => !s)} aria-label="Toggle password">
-          {show ? <EyeOff size={15} /> : <Eye size={15} />}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Main component ──────────────────────────────────────────────────────── */
 export default function LandingPage() {
   const navigate = useNavigate();
   const [view, setView] = useState(VIEWS.HOME);
-
-  // Sign-up form state
-  const [signupName, setSignupName] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-
-  // Log-in form state
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
+  const { loginWithGoogle, signupWithGoogle, setDemoUser, currentUser } = useAuth();
+  const [errorMsg, setErrorMsg] = useState("");
 
   const goToApp = () => navigate('/app');
 
-  const handleSignup = e => {
-    e.preventDefault();
-    // No real auth — just navigate
+  // If already logged in, redirect straight to app
+  if (currentUser) {
     goToApp();
+  }
+
+  const handleSignup = async () => {
+    setErrorMsg("");
+    try {
+      await signupWithGoogle();
+      goToApp();
+    } catch (err) {
+      setErrorMsg(err.message || "Failed to sign up with Google");
+    }
   };
 
-  const handleLogin = e => {
-    e.preventDefault();
+  const handleLogin = async () => {
+    setErrorMsg("");
+    try {
+      await loginWithGoogle();
+      goToApp();
+    } catch (err) {
+      setErrorMsg(err.message || "Failed to log in with Google");
+    }
+  };
+
+  const handleDemo = () => {
+    setDemoUser();
     goToApp();
   };
 
@@ -164,7 +151,6 @@ export default function LandingPage() {
           lift={60}
           fade={0.55}
           dim={0.5}
-          overlayColor="#071a0c"
           overlayColor="#1a3528"
         />
       </div>
@@ -212,9 +198,9 @@ export default function LandingPage() {
                 <Lock size={16} />
                 Log In
               </button>
-              <button className="lp-btn lp-btn--ghost lp-btn--wide" onClick={goToApp}>
+              <button className="lp-btn lp-btn--ghost lp-btn--wide" onClick={handleDemo}>
                 <ArrowRight size={16} />
-                Try as Guest
+                Demo Account
               </button>
             </div>
 
@@ -235,51 +221,13 @@ export default function LandingPage() {
               </button>
             </div>
 
-            <form className="lp-form" onSubmit={handleSignup} noValidate>
-              <div className="lp-field">
-                <label htmlFor="signup-name">Full Name</label>
-                <div className="lp-field-row">
-                  <User size={15} className="lp-field-icon" />
-                  <input
-                    id="signup-name"
-                    type="text"
-                    value={signupName}
-                    onChange={e => setSignupName(e.target.value)}
-                    placeholder="Arjun Sharma"
-                    required
-                    autoComplete="name"
-                  />
-                </div>
-              </div>
-
-              <div className="lp-field">
-                <label htmlFor="signup-email">Email</label>
-                <div className="lp-field-row">
-                  <Mail size={15} className="lp-field-icon" />
-                  <input
-                    id="signup-email"
-                    type="email"
-                    value={signupEmail}
-                    onChange={e => setSignupEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    required
-                    autoComplete="email"
-                  />
-                </div>
-              </div>
-
-              <PasswordField
-                id="signup-password"
-                label="Password"
-                value={signupPassword}
-                onChange={e => setSignupPassword(e.target.value)}
-              />
-
-              <button type="submit" className="lp-btn lp-btn--primary lp-btn--full">
-                Create Account
+            <div className="lp-form">
+              {errorMsg && <p className="lp-error-msg" style={{color: '#f87171', fontSize: '0.875rem', marginBottom: '1rem', textAlign: 'center'}}>{errorMsg}</p>}
+              <button type="button" onClick={handleSignup} className="lp-btn lp-btn--primary lp-btn--full">
+                Sign up with Google
                 <ArrowRight size={15} />
               </button>
-            </form>
+            </div>
 
             <p className="lp-form-footer">
               Already have an account?{' '}
@@ -298,35 +246,13 @@ export default function LandingPage() {
               </button>
             </div>
 
-            <form className="lp-form" onSubmit={handleLogin} noValidate>
-              <div className="lp-field">
-                <label htmlFor="login-email">Email</label>
-                <div className="lp-field-row">
-                  <Mail size={15} className="lp-field-icon" />
-                  <input
-                    id="login-email"
-                    type="email"
-                    value={loginEmail}
-                    onChange={e => setLoginEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    required
-                    autoComplete="email"
-                  />
-                </div>
-              </div>
-
-              <PasswordField
-                id="login-password"
-                label="Password"
-                value={loginPassword}
-                onChange={e => setLoginPassword(e.target.value)}
-              />
-
-              <button type="submit" className="lp-btn lp-btn--primary lp-btn--full">
-                Log In
+            <div className="lp-form">
+              {errorMsg && <p className="lp-error-msg" style={{color: '#f87171', fontSize: '0.875rem', marginBottom: '1rem', textAlign: 'center'}}>{errorMsg}</p>}
+              <button type="button" onClick={handleLogin} className="lp-btn lp-btn--primary lp-btn--full">
+                Sign in with Google
                 <ArrowRight size={15} />
               </button>
-            </form>
+            </div>
 
             <p className="lp-form-footer">
               No account yet?{' '}
@@ -389,8 +315,8 @@ export default function LandingPage() {
                   Get Started
                   <ArrowRight size={15} />
                 </button>
-                <button className="lp-btn lp-btn--ghost" onClick={goToApp}>
-                  Try as Guest
+                <button className="lp-btn lp-btn--ghost" onClick={handleDemo}>
+                  Demo Account
                 </button>
               </div>
             </div>

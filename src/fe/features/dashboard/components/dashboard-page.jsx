@@ -1,11 +1,65 @@
-import React, { useState } from "react";
-import { Sparkles, X, Camera } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Sparkles, X, Camera, MapPin } from "lucide-react";
 
 import CameraScanner from "@fe/features/camera/camera-scanner";
+import { useAuth } from "@fe/contexts/AuthContext";
 import "./dashboard-page.css";
 
 export default function DashboardPage() {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [locationText, setLocationText] = useState("Locating...");
+  const [currentCoords, setCurrentCoords] = useState({ latitude: 0, longitude: 0 });
+  const { currentUser } = useAuth();
+
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            setCurrentCoords({ latitude, longitude });
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+            const data = await res.json();
+            const city = data.address.city || data.address.town || data.address.village || "Unknown City";
+            const state = data.address.state || "Unknown State";
+            setLocationText(`${city}, ${state}`);
+          } catch (error) {
+            console.error("Error fetching location name:", error);
+            setLocationText("Location unknown");
+          }
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          setLocationText("Location access denied");
+        }
+      );
+    } else {
+      setLocationText("Geolocation unavailable");
+    }
+  }, []);
+
+  const handleScanComplete = async (result) => {
+    console.log("Scan complete:", result);
+    if (!currentUser || !result.identified_plant_id) return;
+    
+    try {
+      const response = await fetch(`/api/v1/users/${currentUser.uid}/discoveries`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plant_id: result.identified_plant_id,
+          location: currentCoords
+        })
+      });
+      const data = await response.json();
+      console.log("Discovery logged successfully:", data);
+      
+      // Dispatch event to update gamification state globally if needed
+      window.dispatchEvent(new CustomEvent("aranya:discovery-logged", { detail: data.data }));
+    } catch (error) {
+      console.error("Failed to log discovery:", error);
+    }
+  };
 
   return (
     <div className="dashboard-layout">
@@ -16,7 +70,10 @@ export default function DashboardPage() {
           <h1 className="main-title">
             Living biodiversity <span className="status-dot" />
           </h1>
-          <p className="status-text">Vellore, Tamil Nadu · AI active</p>
+          <p className="status-text">
+            <MapPin size={12} style={{ display: 'inline', marginRight: '4px' }} />
+            {locationText}
+          </p>
         </section>
 
         {/* ── Species Card ────────────────────────────────────────────── */}
@@ -59,7 +116,7 @@ export default function DashboardPage() {
             <X size={24} color="#ffffff" />
           </button>
           <CameraScanner
-            onScanComplete={(result) => console.log("Scan complete:", result)}
+            onScanComplete={handleScanComplete}
           />
         </div>
       )}
