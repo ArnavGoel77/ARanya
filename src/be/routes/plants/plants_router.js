@@ -7,6 +7,26 @@ router.get('/:plant_id/ar-metadata', async (req, res) => {
   try {
     const { plant_id } = req.params;
     
+    // Fallback: intercept 'mock_human' to provide fake AR metadata
+    if (plant_id === "mock_human") {
+      return res.status(200).json({
+        success: true,
+        data: {
+          plant_id: "mock_human",
+          scientific_name: "Homo sapiens",
+          common_name: "Human (Demo Data)",
+          plant_family: "Hominidae",
+          native_region: "Planet Earth",
+          ecological_importance: "Top apex predator and dominant ecosystem engineer.",
+          conservation_status: "Least Concern",
+          is_rare: false,
+          threats: "Climate change, habitat destruction, self-destructive behavior.",
+          conservation_best_practices: "Reduce carbon footprint, protect biodiversity.",
+          historical_context: "Evolved in Africa roughly 300,000 years ago."
+        }
+      });
+    }
+
     if (!db) {
       return res.status(500).json({ success: false, error: "Database connection failed." });
     }

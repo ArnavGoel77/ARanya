@@ -65,7 +65,8 @@ export async function identifyPlant({ imageData, captureLocation, deviceTimestam
   });
 
   if (!response.ok) {
-    throw new Error(`identifyPlant: HTTP ${response.status} — ${response.statusText}`);
+    const errorJson = await response.json().catch(() => ({}));
+    throw new Error(errorJson.error || `identifyPlant: HTTP ${response.status} — ${response.statusText}`);
   }
 
   return response.json();
