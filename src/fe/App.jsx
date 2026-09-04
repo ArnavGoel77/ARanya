@@ -2,10 +2,11 @@
  * App.jsx — Root application component.
  *
  * Routes:
- *   /         → LandingPage  (DriftWall hero with auth CTAs)
- *   /app      → Main AppLayout (dashboard)
- *   /app/map  → Map page
- *   *         → redirect to /
+ *   /               → LandingPage  (DriftWall hero with auth CTAs)
+ *   /app            → Dashboard
+ *   /app/map        → Map page
+ *   /app/achievements → Gamification / Achievements page
+ *   *               → redirect to /
  */
 import React, { useState, useEffect, Suspense } from "react";
 import {
@@ -20,10 +21,11 @@ import {
 } from "lucide-react";
 
 /* ── Lazy-load heavy features so a crash in one doesn't kill the other ── */
-const LandingPage         = React.lazy(() => import("./features/landing/components/LandingPage"));
-const DashboardPage       = React.lazy(() => import("./features/dashboard/components/dashboard-page"));
-const MapPage             = React.lazy(() => import("@fe/features/map/components/map-page"));
-const BotanistChatWindow  = React.lazy(() => import("@fe/features/botanist_chat/components/botanist-chat-window"));
+const LandingPage        = React.lazy(() => import("./features/landing/components/LandingPage"));
+const DashboardPage      = React.lazy(() => import("./features/dashboard/components/dashboard-page"));
+const MapPage            = React.lazy(() => import("@fe/features/map/components/map-page"));
+const BotanistChatWindow = React.lazy(() => import("@fe/features/botanist_chat/components/botanist-chat-window"));
+const GamificationPage   = React.lazy(() => import("@fe/features/gamification/components/gamification-page"));
 
 import "./app-layout.css";
 
@@ -138,7 +140,7 @@ function AppLayout() {
                 </div>
               </button>
 
-              <button className="agl-feature-btn" onClick={() => goTo("/app")}>
+              <button className="agl-feature-btn" onClick={() => goTo("/app/achievements")}>
                 <div className="agl-feature-icon" style={{ background: "linear-gradient(135deg, #8a3e2a, #c07050)" }}>
                   <Award size={16} color="#e5dcc5" />
                 </div>
@@ -178,7 +180,7 @@ function AppLayout() {
             <span className="agl-brand-name">ARanya</span>
           </button>
         </div>
-        <button className="agl-profile-btn" aria-label="Profile">
+        <button className="agl-profile-btn" onClick={() => goTo("/app/achievements")} aria-label="Profile">
           <User size={18} color="#2a3e34" />
         </button>
       </header>
@@ -190,6 +192,7 @@ function AppLayout() {
             <Routes>
               <Route index element={<DashboardPage />} />
               <Route path="map" element={<MapPage />} />
+              <Route path="achievements" element={<GamificationPage />} />
             </Routes>
           </Suspense>
         </ErrorBoundary>
