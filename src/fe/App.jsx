@@ -1,22 +1,97 @@
 /**
  * App.jsx — Root application component.
- * Global sidebar wraps all routes so the hamburger menu is always accessible.
+ *
+ * Routes:
+ *   /         → LandingPage  (DriftWall hero with auth CTAs)
+ *   /app      → Main AppLayout (dashboard)
+ *   /app/map  → Map page
+ *   *         → redirect to /
  */
-import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
-import { Menu, X, MessageSquare, MapPin, Award, Camera, Leaf, User } from "lucide-react";
+import React, { useState, useEffect, Suspense } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
+import {
+  Menu, X, MessageSquare, MapPin, Award, Camera, Leaf, User,
+} from "lucide-react";
 
-import DashboardPage from "./features/dashboard/components/dashboard-page";
-import MapPage from "@fe/features/map/components/map-page";
-import BotanistChatWindow from "@fe/features/botanist_chat/components/botanist-chat-window";
+/* ── Lazy-load heavy features so a crash in one doesn't kill the other ── */
+const LandingPage         = React.lazy(() => import("./features/landing/components/LandingPage"));
+const DashboardPage       = React.lazy(() => import("./features/dashboard/components/dashboard-page"));
+const MapPage             = React.lazy(() => import("@fe/features/map/components/map-page"));
+const BotanistChatWindow  = React.lazy(() => import("@fe/features/botanist_chat/components/botanist-chat-window"));
+
 import "./app-layout.css";
 
+/* ─── Simple error boundary ─────────────────────────────────────────────── */
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, info) {
+    console.error("[ARanya ErrorBoundary]", error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          minHeight: "100vh", display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center",
+          background: "#0a160d", color: "#e5dcc5", fontFamily: "Inter, sans-serif",
+          padding: "2rem", textAlign: "center", gap: "1rem"
+        }}>
+          <div style={{ fontSize: "2rem" }}>🌿</div>
+          <h2 style={{ margin: 0, fontSize: "1.2rem" }}>Something went wrong</h2>
+          <pre style={{
+            background: "rgba(255,255,255,0.06)", borderRadius: "8px",
+            padding: "1rem", fontSize: "0.75rem", color: "#f87171",
+            maxWidth: "600px", overflowX: "auto", textAlign: "left"
+          }}>
+            {this.state.error?.message}
+          </pre>
+          <button
+            onClick={() => { this.setState({ hasError: false, error: null }); window.location.href = "/"; }}
+            style={{
+              background: "#2e6b42", color: "#fff", border: "none",
+              borderRadius: "10px", padding: "10px 24px", cursor: "pointer",
+              fontSize: "0.875rem", fontWeight: 600
+            }}
+          >
+            ← Back to Home
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+/* ─── Minimal loading fallback ───────────────────────────────────────────── */
+function PageLoader() {
+  return (
+    <div style={{
+      minHeight: "100vh", display: "flex", alignItems: "center",
+      justifyContent: "center", background: "#0a160d"
+    }}>
+      <Leaf size={28} color="#4a9c62" style={{ opacity: 0.7 }} />
+    </div>
+  );
+}
+
+/* ─── Main app shell (sidebar + topbar + routes) ─────────────────────────── */
 function AppLayout() {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
-  // Listen for "Ask the guide" button on the dashboard card
   useEffect(() => {
     const handler = () => setIsChatOpen(true);
     window.addEventListener("aranya:open-chat", handler);
@@ -24,11 +99,7 @@ function AppLayout() {
   }, []);
 
   const closeSidebar = () => setIsSidebarOpen(false);
-
-  const goTo = (path) => {
-    closeSidebar();
-    navigate(path);
-  };
+  const goTo = (path) => { closeSidebar(); navigate(path); };
 
   return (
     <>
@@ -57,7 +128,7 @@ function AppLayout() {
                 </div>
               </button>
 
-              <button className="agl-feature-btn" onClick={() => goTo("/map")}>
+              <button className="agl-feature-btn" onClick={() => goTo("/app/map")}>
                 <div className="agl-feature-icon" style={{ background: "linear-gradient(135deg, #5a3e20, #a07040)" }}>
                   <MapPin size={16} color="#e5dcc5" />
                 </div>
@@ -67,7 +138,7 @@ function AppLayout() {
                 </div>
               </button>
 
-              <button className="agl-feature-btn" onClick={() => goTo("/")}>
+              <button className="agl-feature-btn" onClick={() => goTo("/app")}>
                 <div className="agl-feature-icon" style={{ background: "linear-gradient(135deg, #8a3e2a, #c07050)" }}>
                   <Award size={16} color="#e5dcc5" />
                 </div>
@@ -77,7 +148,7 @@ function AppLayout() {
                 </div>
               </button>
 
-              <button className="agl-feature-btn" onClick={() => goTo("/")}>
+              <button className="agl-feature-btn" onClick={() => goTo("/app")}>
                 <div className="agl-feature-icon" style={{ background: "linear-gradient(135deg, #1a3a50, #2a6080)" }}>
                   <Camera size={16} color="#e5dcc5" />
                 </div>
@@ -102,7 +173,7 @@ function AppLayout() {
           <button className="agl-hamburger" onClick={() => setIsSidebarOpen(true)} aria-label="Open menu">
             <Menu size={22} color="#2a3e34" />
           </button>
-          <button className="agl-brand" onClick={() => goTo("/")} aria-label="Go home">
+          <button className="agl-brand" onClick={() => goTo("/app")} aria-label="Go home">
             <div className="agl-brand-badge">A</div>
             <span className="agl-brand-name">ARanya</span>
           </button>
@@ -112,27 +183,51 @@ function AppLayout() {
         </button>
       </header>
 
-      {/* ── Page Content (padded below fixed topbar) ──────────────── */}
+      {/* ── Page Content ────────────────────────────────────────────── */}
       <main className="agl-page-content">
-        <Routes>
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/map" element={<MapPage />} />
-        </Routes>
+        <ErrorBoundary>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route index element={<DashboardPage />} />
+              <Route path="map" element={<MapPage />} />
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
       </main>
 
       {/* ── Global Botanist Chat Modal ─────────────────────────────── */}
-      <BotanistChatWindow
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-      />
+      <ErrorBoundary>
+        <Suspense fallback={null}>
+          <BotanistChatWindow isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+        </Suspense>
+      </ErrorBoundary>
     </>
   );
 }
 
+/* ─── Root with routing ──────────────────────────────────────────────────── */
 export default function App() {
   return (
     <Router>
-      <AppLayout />
+      <ErrorBoundary>
+        <Routes>
+          {/* Landing page — full-screen DriftWall hero */}
+          <Route
+            path="/"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <LandingPage />
+              </Suspense>
+            }
+          />
+
+          {/* Main app shell */}
+          <Route path="/app/*" element={<AppLayout />} />
+
+          {/* Catch-all */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </ErrorBoundary>
     </Router>
   );
 }
