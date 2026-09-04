@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import { Info, RefreshCw } from "lucide-react";
 import { MapProvider } from "../context/map-context";
+import { useAuth } from "@fe/contexts/AuthContext";
 
 // Custom Marker Icons
 const userLocationIcon = new L.Icon({
@@ -35,7 +36,8 @@ function MapController({ center }) {
 }
 
 const MapContent = () => {
-  const userPosition = [12.9165, 79.1325]; // Default: Vellore coordinates
+  const { currentUser } = useAuth();
+  const [userPosition, setUserPosition] = useState([12.9165, 79.1325]); // Default: Vellore coordinates
   const [identifiedPlants, setIdentifiedPlants] = useState([]);
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -49,31 +51,16 @@ const MapContent = () => {
       conservation_status: "Critically Endangered",
       location: { latitude: 12.918, longitude: 79.145 },
       discovered_at: "2026-09-01T10:15:30Z",
-    },
-    {
-      plant_id: "plant_am_204",
-      scientific_name: "Alphonsea madraspatana",
-      common_name: "Madras Alphonsea",
-      conservation_status: "Threatened",
-      location: { latitude: 12.921, longitude: 79.138 },
-      discovered_at: "2026-08-28T14:22:10Z",
-    },
-    {
-      plant_id: "plant_gs_205",
-      scientific_name: "Gloriosa superba",
-      common_name: "Flame Lily",
-      conservation_status: "Native",
-      location: { latitude: 12.905, longitude: 79.121 },
-      discovered_at: "2026-08-20T09:05:00Z",
-    },
+    }
   ];
 
   // Fetch Identified Plants from Backend
   const fetchIdentifiedPlants = async () => {
     setLoading(true);
     try {
-      // Connects to Domain 4 User Discoveries API
-      const response = await fetch("/api/v1/users/usr_99823/discoveries");
+      if (!currentUser?.uid) return;
+      
+      const response = await fetch(`/api/v1/users/${currentUser.uid}/discoveries`);
       if (response.ok) {
         const json = await response.json();
         if (json.data && Array.isArray(json.data.discoveries)) {
@@ -94,6 +81,14 @@ const MapContent = () => {
 
   useEffect(() => {
     fetchIdentifiedPlants();
+  }, [currentUser]);
+
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        setUserPosition([position.coords.latitude, position.coords.longitude]);
+      });
+    }
   }, []);
 
   return (
@@ -178,6 +173,8 @@ const MapContent = () => {
             center={userPosition} 
             zoom={13} 
             scrollWheelZoom={true}
+            zoomControl={false}
+            attributionControl={false}
             style={{ width: "100%", height: "100%", minHeight: "450px" }}
           >
             {/* Google Maps Styled OSM TileLayer */}
@@ -192,7 +189,7 @@ const MapContent = () => {
             <Marker position={userPosition} icon={userLocationIcon}>
               <Popup>
                 <strong>You Are Here</strong><br />
-                Vellore, Tamil Nadu
+                Current Location
               </Popup>
             </Marker>
 

@@ -1,54 +1,104 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Send, Sparkles, X, Bot, User, Loader2, ChevronRight } from "lucide-react";
 import { askBotanistGuide } from "../services/chat-service";
+import { useAuth } from "@fe/contexts/AuthContext";
+import { db } from "@fe/config/firebase";
+import { collection, addDoc, serverTimestamp, updateDoc, doc, getDoc } from "firebase/firestore";
 import "./botanist-chat-window.css";
 
-export default function BotanistChatWindow({ isOpen, onClose, plantContext }) {
+export default function BotanistChatWindow({ isOpen, onClose, plantContext, activeThreadId }) {
   const [messages, setMessages] = useState([]);
   const [followups, setFollowups] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [hasSentNewMessage, setHasSentNewMessage] = useState(false);
+  const [threadId, setThreadId] = useState(null);
+  const { currentUser } = useAuth();
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Reset state and seed welcome message when the chat window opens
+  // Initialize or resume chat when window opens
   useEffect(() => {
     if (isOpen) {
-      setMessages([]);
-      setFollowups([]);
-      setInputMessage("");
-      setHasStarted(false);
+      if (activeThreadId) {
+        // We're explicitly asked to load a specific past thread
+        if (activeThreadId !== threadId) {
+          // It's different from what's currently loaded, so reset and fetch
+          setMessages([]);
+          setFollowups([]);
+          setInputMessage("");
+          setThreadId(null);
+          
+          const fetchThread = async () => {
+            setIsLoading(true);
+            try {
+              const docRef = doc(db, "chat_threads", activeThreadId);
+              const docSnap = await getDoc(docRef);
+              if (docSnap.exists()) {
+                const data = docSnap.data();
+                setMessages(data.messages || []);
+                setThreadId(activeThreadId);
+                setHasStarted(true); // Treat as started so input focuses
+                setHasSentNewMessage(false);
+              }
+            } catch (err) {
+              console.error("Failed to load chat history:", err);
+            } finally {
+              setIsLoading(false);
+            }
+          };
+          fetchThread();
+        }
+      } else {
+        // activeThreadId is null/undefined
+        
+        if (threadId && !hasSentNewMessage) {
+          // If we loaded an existing thread but haven't interacted with it, 
+          // the user just viewed it. Clear it out and start a fresh chat.
+        } else if (messages.length > 0) {
+          // If we have a brand new chat going, or an actively modified past chat, resume it!
+          return;
+        }
 
-      // Tailor welcome message and follow-ups to the current plant context
-      const plantName = plantContext?.common_name;
-      const welcomeText = plantName
-        ? `Hello! I'm your AI Botanical Guide. You've just identified **${plantName}** (*${plantContext.scientific_name}*). What would you like to know about it? 🌿`
-        : `Hello! I'm your AI Botanical Guide. Ask me anything about plants — identification, cultivation, ecology, conservation, and more. I'm here to help! 🌿`;
+        // Otherwise, start a brand new chat
+        setMessages([]);
+        setFollowups([]);
+        setInputMessage("");
+        setHasStarted(false);
+        setHasSentNewMessage(false);
+        setThreadId(null);
 
-      const contextFollowups = plantName
-        ? [
-            `What is the ecological role of ${plantName}?`,
-            `Is ${plantName} suitable for home cultivation?`,
-            `What are the conservation efforts for ${plantName}?`,
-          ]
-        : [
-            "What plants are native to South India?",
-            "How do I identify a plant I found?",
-            "Which plants are best for home gardening in India?",
-          ];
+        // Tailor welcome message and follow-ups to the current plant context
+        const plantName = plantContext?.common_name;
+        const welcomeText = plantName
+          ? `Hello! I'm your AI Botanical Guide. You've just identified **${plantName}** (*${plantContext.scientific_name}*). What would you like to know about it? 🌿`
+          : `Hello! I'm your AI Botanical Guide. Ask me anything about plants — identification, cultivation, ecology, conservation, and more. I'm here to help! 🌿`;
 
-      setTimeout(() => {
-        setMessages([{
-          id: Date.now(),
-          sender: "botanist",
-          text: welcomeText,
-          isWelcome: true,
-        }]);
-        setFollowups(contextFollowups);
-      }, 300);
+        const contextFollowups = plantName
+          ? [
+              `What is the ecological role of ${plantName}?`,
+              `Is ${plantName} suitable for home cultivation?`,
+              `What are the conservation efforts for ${plantName}?`,
+            ]
+          : [
+              "What plants are native to South India?",
+              "How do I identify a plant I found?",
+              "Which plants are best for home gardening in India?",
+            ];
+
+        setTimeout(() => {
+          setMessages([{
+            id: Date.now(),
+            sender: "botanist",
+            text: welcomeText,
+            isWelcome: true,
+          }]);
+          setFollowups(contextFollowups);
+        }, 300);
+      }
     }
-  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOpen, activeThreadId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -67,6 +117,7 @@ export default function BotanistChatWindow({ isOpen, onClose, plantContext }) {
     if (!query || isLoading) return;
 
     setHasStarted(true);
+    setHasSentNewMessage(true);
     const userMsg = { id: Date.now(), sender: "user", text: query };
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
@@ -77,11 +128,41 @@ export default function BotanistChatWindow({ isOpen, onClose, plantContext }) {
     try {
       const plantId = plantContext?.plant_id ?? "";
       const data = await askBotanistGuide(plantId, query);
+      const botMsg = { id: Date.now() + 1, sender: "botanist", text: data.reply_text };
       setMessages([
         ...updatedMessages,
-        { id: Date.now() + 1, sender: "botanist", text: data.reply_text },
+        botMsg,
       ]);
       setFollowups(data.suggested_followup_queries || []);
+
+      // Save to Firestore
+      if (currentUser?.uid) {
+        if (!threadId) {
+          // Create new thread
+          const threadRef = await addDoc(collection(db, "chat_threads"), {
+            user_id: currentUser.uid,
+            plant_id: plantId,
+            plant_name: plantContext?.common_name || "General Inquiry",
+            created_at: serverTimestamp(),
+            messages: [
+              ...updatedMessages,
+              botMsg
+            ]
+          });
+          setThreadId(threadRef.id);
+          window.dispatchEvent(new CustomEvent("aranya:refresh-chats"));
+        } else {
+          // Update existing thread
+          const threadRef = doc(db, "chat_threads", threadId);
+          await updateDoc(threadRef, {
+            messages: [
+              ...updatedMessages,
+              botMsg
+            ],
+            updated_at: serverTimestamp()
+          });
+        }
+      }
     } catch (error) {
       setMessages([
         ...updatedMessages,

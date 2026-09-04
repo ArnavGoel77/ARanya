@@ -41,6 +41,12 @@ export default function useCameraStream() {
   const startStream = useCallback(async () => {
     setStreamError(null);
     setIsStreaming(false);
+    
+    // Stop any existing stream first to avoid orphaned tracks (e.g., in React StrictMode)
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
 
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({

@@ -1,93 +1,21 @@
-import React, { useState, useRef, useCallback } from "react";
-import { Award, Star, Zap, Shield, Compass, ChevronRight, Sprout, Flame } from "lucide-react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
+import { Award, Star, Zap, Shield, Compass, ChevronRight, Sprout, Flame, LogOut } from "lucide-react";
+import { useAuth } from "@fe/contexts/AuthContext";
+import { db } from "@fe/config/firebase";
+import { doc, getDoc } from "firebase/firestore";
 import "./gamification-page.css";
 
-// --- Mock Data for Showcase ---
-const MOCK_USER = {
-  username: "EcoExplorer99",
-  title: "Master Botanist",
-  totalPoints: 1150,
-  rank: "Top 5%",
-  discoveriesCount: 24,
-  avatar: "https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=200&q=80"
-};
-
-const MOCK_BADGES = [
-  { id: "b1", name: "Global Pioneer", tier: "diamond", icon: <Star size={28} />, isUnlocked: true, description: "Be the first in the world to discover a species.", xpReward: 1000 },
-  { id: "b2", name: "Novice Botanist", tier: "bronze", icon: <Sprout size={28} />, isUnlocked: true, description: "Identify your first 10 plant species.", xpReward: 100 },
-  { id: "b3", name: "Expert Botanist", tier: "silver", icon: <Award size={28} />, isUnlocked: true, description: "Successfully identify 50 native species.", xpReward: 500 },
-  { id: "b4", name: "Rare Finder", tier: "gold", icon: <Zap size={28} />, isUnlocked: true, description: "Document an endangered plant.", xpReward: 300 },
-  { id: "b5", name: "Night Owl", tier: "silver", icon: <Compass size={28} />, isUnlocked: true, description: "Discover 5 plants between 10PM and 4AM.", xpReward: 200 },
-  { id: "b6", name: "Guardian", tier: "gold", icon: <Shield size={28} />, isUnlocked: false, description: "Report 3 conservation threats.", xpReward: 400 },
+// --- Real Badge Directory (IDs must match Backend / Firestore) ---
+const BADGE_DIRECTORY = [
+  { id: "badge_global_pioneer", name: "Global Pioneer", tier: "diamond", icon: <Star size={28} />, isUnlocked: false, description: "Be the first in the world to discover a species.", xpReward: 1000 },
+  { id: "badge_novice", name: "Novice Botanist", tier: "bronze", icon: <Sprout size={28} />, isUnlocked: false, description: "Identify your first 10 plant species.", xpReward: 100 },
+  { id: "badge_expert", name: "Expert Botanist", tier: "silver", icon: <Award size={28} />, isUnlocked: false, description: "Successfully identify 50 native species.", xpReward: 500 },
+  { id: "badge_endemic_explorer", name: "Endemic Explorer", tier: "gold", icon: <Zap size={28} />, isUnlocked: false, description: "Document an endangered plant.", xpReward: 300 },
+  { id: "badge_ghats_guardian", name: "Ghats Guardian", tier: "silver", icon: <Shield size={28} />, isUnlocked: false, description: "Report 3 conservation threats.", xpReward: 400 },
+  { id: "badge_riparian_ranger", name: "Riparian Ranger", tier: "diamond", icon: <Compass size={28} />, isUnlocked: false, description: "Explore 10 different geographic regions.", xpReward: 800 },
   { id: "b7", name: "Hot Streak", tier: "platinum", icon: <Flame size={28} />, isUnlocked: false, description: "Identify plants 7 days in a row.", xpReward: 250 },
   { id: "b8", name: "Nature's Friend", tier: "bronze", icon: <Sprout size={28} />, isUnlocked: false, description: "Log 5 consecutive days of activity.", xpReward: 150 },
-  { id: "b9", name: "Master Tracker", tier: "diamond", icon: <Compass size={28} />, isUnlocked: false, description: "Explore 10 different geographic regions.", xpReward: 800 }
-];
-
-const MOCK_DISCOVERIES = [
-  {
-    id: "d1",
-    name: "Croton gibsonianus",
-    common: "Gibson's Croton",
-    rarity: "Critically Endangered",
-    points: 1100,
-    date: "2 hours ago",
-    image: "https://upload.wikimedia.org/wikipedia/commons/5/5d/Croton_gibsonianus_Nimmo_%2816098381478%29.jpg"
-  },
-  {
-    id: "d2",
-    name: "Alphonsea lutea",
-    common: "Madras Alphonsea",
-    rarity: "Endemic",
-    points: 500,
-    date: "Yesterday",
-    image: "https://upload.wikimedia.org/wikipedia/commons/6/6e/Gloriosa_superba_flowers_and_leaves_at_madikai_in_Kasaragod.jpg"
-  },
-  {
-    id: "d3",
-    name: "Gloriosa superba",
-    common: "Flame Lily",
-    rarity: "Rare",
-    points: 200,
-    date: "3 days ago",
-    image: "https://upload.wikimedia.org/wikipedia/commons/1/15/Gloriosa_superba_flower.jpg"
-  },
-  {
-    id: "d4",
-    name: "Santalum album",
-    common: "Indian Sandalwood",
-    rarity: "Vulnerable",
-    points: 400,
-    date: "Last week",
-    image: "https://upload.wikimedia.org/wikipedia/commons/9/9b/Indian_sandalwood_Plant.jpg"
-  },
-  {
-    id: "d5",
-    name: "Azadirachta indica",
-    common: "Neem",
-    rarity: "Least Concern",
-    points: 100,
-    date: "Last week",
-    image: "https://upload.wikimedia.org/wikipedia/commons/9/9e/Azadirachta_indica_flowers_in_Guntur.jpg"
-  },
-  {
-    id: "d6",
-    name: "Ficus religiosa",
-    common: "Peepal",
-    rarity: "Least Concern",
-    points: 150,
-    date: "2 weeks ago",
-    image: "https://upload.wikimedia.org/wikipedia/commons/a/a3/Peepal_%28Ficus_religiosa%29.jpg"
-  },
-  {
-    id: "d7",
-    name: "Saraca asoca",
-    common: "Ashoka Tree",
-    rarity: "Endangered",
-    points: 650,
-    date: "3 weeks ago",
-    image: "https://upload.wikimedia.org/wikipedia/commons/5/5d/Saraca_asoca_flowers.jpg"
-  }
+  { id: "b9", name: "Night Owl", tier: "silver", icon: <Compass size={28} />, isUnlocked: false, description: "Discover 5 plants between 10PM and 4AM.", xpReward: 200 }
 ];
 
 const ShinyBadgeCard = ({ badge }) => {
@@ -164,50 +92,140 @@ const ShinyBadgeCard = ({ badge }) => {
 };
 
 export default function GamificationPage() {
+  const { currentUser, logout } = useAuth();
+  const [userData, setUserData] = useState({
+    totalPoints: 0,
+    discoveriesCount: 0,
+    badges: [],
+    discoveries: []
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!currentUser?.uid) return;
+      try {
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        
+        let fetchedData = { totalPoints: 0, discoveriesCount: 0, badges: [], discoveries: [] };
+        
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          fetchedData.totalPoints = data.total_score || 0;
+          fetchedData.discoveriesCount = data.discoveries_count || 0;
+          fetchedData.badges = data.badges || [];
+        }
+
+        // Fetch recent discoveries from backend (or use mock)
+        const response = await fetch(`/api/v1/users/${currentUser.uid}/discoveries`);
+        if (response.ok) {
+          const json = await response.json();
+          if (json.data && Array.isArray(json.data.discoveries)) {
+            fetchedData.discoveries = json.data.discoveries;
+          }
+        }
+        
+        setUserData(fetchedData);
+      } catch (error) {
+        console.error("Error fetching gamification data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [currentUser]);
+
+  // Merge unlocked badges
+  const displayBadges = BADGE_DIRECTORY.map(b => ({
+    ...b,
+    isUnlocked: userData.badges.includes(b.id)
+  }));
+
+  // Calculate Level dynamically (200 XP per level)
+  const currentLevel = Math.floor(userData.totalPoints / 200) + 1;
+  const nextLevelXp = currentLevel * 200;
+
   return (
     <div className="gamification-container">
       {/* ── Hero Profile ── */}
-      <section className="gami-hero">
+      <section className="gami-hero" style={{ position: 'relative' }}>
+        <button 
+          onClick={logout}
+          style={{
+            position: 'absolute',
+            top: '1rem',
+            right: '1rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            padding: '0.5rem 1rem',
+            borderRadius: '2rem',
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            color: 'white',
+            cursor: 'pointer',
+            fontFamily: "'Inter', sans-serif",
+            fontSize: '0.875rem',
+            fontWeight: '600',
+            backdropFilter: 'blur(10px)',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+          title="Sign out"
+        >
+          <LogOut size={16} />
+          <span>Sign Out</span>
+        </button>
+
         <div className="gami-avatar-ring">
           <div className="gami-avatar-inner">
-            <img src="/profile.jpg" alt="Botanist Explorer" style={{width:'100%',height:'100%',objectFit:'cover'}} />
+            <img src={currentUser?.photoURL || "/profile.jpg"} alt={currentUser?.displayName || "Explorer"} style={{width:'100%',height:'100%',objectFit:'cover'}} />
           </div>
         </div>
 
         <div className="gami-profile-details">
-          <h1 className="gami-username">{MOCK_USER.username}</h1>
+          <h1 className="gami-username">{currentUser?.displayName || "EcoExplorer99"}</h1>
           <div className="gami-rank-badge">
             <span className="gami-rank-stars">✦</span>
-            <span className="gami-rank-text">{MOCK_USER.title}</span>
+            <span className="gami-rank-text">Level {currentLevel} Botanist</span>
             <span className="gami-rank-stars">✦</span>
           </div>
 
           <div className="gami-xp-bar-wrapper">
             <div className="gami-xp-bar-label">
-              <span>Level 12 → Level 13</span>
-              <span>1,150 / 2,000 XP</span>
+              <span>Level {currentLevel} → Level {currentLevel + 1}</span>
+              <span>{userData.totalPoints} / {nextLevelXp} XP</span>
             </div>
             <div className="gami-xp-bar-track">
-              <div className="gami-xp-bar-fill" />
+              <div className="gami-xp-bar-fill" style={{ width: `${Math.min(100, (userData.totalPoints / nextLevelXp) * 100)}%` }} />
             </div>
           </div>
 
           <div className="gami-stats-row">
             <div className="gami-stat-box">
               <div className="gami-stat-icon">🌿</div>
-              <div className="gami-stat-value">{MOCK_USER.discoveriesCount}<span>plants</span></div>
+              <div className="gami-stat-value">{userData.discoveriesCount}<span>plants</span></div>
               <div className="gami-stat-label">Discoveries</div>
               <div className="gami-stat-accent" />
             </div>
             <div className="gami-stat-box">
               <div className="gami-stat-icon">🏆</div>
-              <div className="gami-stat-value">{MOCK_USER.rank}</div>
+              <div className="gami-stat-value">Top 10%</div>
               <div className="gami-stat-label">Global Rank</div>
               <div className="gami-stat-accent" />
             </div>
             <div className="gami-stat-box">
               <div className="gami-stat-icon">⚡</div>
-              <div className="gami-stat-value">9<span>badges</span></div>
+              <div className="gami-stat-value">{userData.badges.length}<span>badges</span></div>
               <div className="gami-stat-label">Achievements</div>
               <div className="gami-stat-accent" />
             </div>
@@ -225,7 +243,7 @@ export default function GamificationPage() {
             <span className="dynamic-title-text">Achievements</span>
           </h3>
           <div className="gami-badges-grid">
-            {MOCK_BADGES.map((badge) => (
+            {displayBadges.map((badge) => (
               <ShinyBadgeCard key={badge.id} badge={badge} />
             ))}
           </div>
@@ -238,22 +256,29 @@ export default function GamificationPage() {
             <span className="dynamic-title-text">Field Journal</span>
           </h3>
           <div className="gami-discoveries-gallery">
-            {MOCK_DISCOVERIES.map((disc) => (
-              <div key={disc.id} className="gami-journal-card">
-                <div className="gami-journal-image-wrapper">
-                  <img src={disc.image} alt={disc.name} />
-                  <span className="gami-journal-rarity">{disc.rarity}</span>
-                </div>
-                <div className="gami-journal-content">
-                  <h4 className="gami-journal-name">{disc.name}</h4>
-                  <p className="gami-journal-common">{disc.common}</p>
-                  <div className="gami-journal-footer">
-                    <span className="gami-journal-date">{disc.date}</span>
-                    <span className="gami-journal-points">+{disc.points} XP</span>
+            {userData.discoveries.length > 0 ? (
+              userData.discoveries.map((disc) => (
+                <div key={disc.plant_id} className="gami-journal-card">
+                  <div className="gami-journal-image-wrapper">
+                    {/* Placeholder image for now, real implementation would fetch plant image */}
+                    <img src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=400&q=80" alt={disc.scientific_name} />
+                    <span className="gami-journal-rarity">{disc.conservation_status}</span>
+                  </div>
+                  <div className="gami-journal-content">
+                    <h4 className="gami-journal-name">{disc.scientific_name}</h4>
+                    <p className="gami-journal-common">{disc.common_name}</p>
+                    <div className="gami-journal-footer">
+                      <span className="gami-journal-date">{new Date(disc.discovered_at).toLocaleDateString()}</span>
+                      <span className="gami-journal-points">+{disc.points_earned || 100} XP</span>
+                    </div>
                   </div>
                 </div>
+              ))
+            ) : (
+              <div style={{ padding: "2rem", textAlign: "center", color: "#6b7a70", gridColumn: "1 / -1" }}>
+                No discoveries yet. Go out and scan some plants!
               </div>
-            ))}
+            )}
           </div>
         </section>
 

@@ -163,4 +163,51 @@ router.post('/:user_id/discoveries', async (req, res) => {
   }
 });
 
+/**
+ * @route GET /api/v1/users/:user_id/discoveries
+ * @description Fetches all plants discovered by a user for mapping.
+ */
+router.get('/:user_id/discoveries', async (req, res) => {
+  try {
+    const { user_id } = req.params;
+    const db = getDb();
+    if (!db) {
+      return res.status(503).json({ success: false, error: "Database not initialized" });
+    }
+
+    const discoveriesSnap = await db.collection('users').doc(user_id).collection('discoveries').get();
+    
+    // We also need the plant names, so we fetch them too
+    const discoveries = [];
+    
+    for (const docSnap of discoveriesSnap.docs) {
+      const data = docSnap.data();
+      const plantId = data.plant_id;
+      
+      const plantSnap = await db.collection('plants').doc(plantId).get();
+      const plantData = plantSnap.exists ? plantSnap.data() : {};
+      
+      discoveries.push({
+        plant_id: plantId,
+        scientific_name: plantData.scientific_name || "Unknown",
+        common_name: plantData.common_name || "Unknown",
+        conservation_status: plantData.conservation_status || "Unknown",
+        location: {
+          latitude: data.location ? data.location.latitude : 0,
+          longitude: data.location ? data.location.longitude : 0,
+        },
+        discovered_at: data.discovered_at ? data.discovered_at.toDate().toISOString() : new Date().toISOString()
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { discoveries }
+    });
+  } catch (error) {
+    console.error('Error fetching discoveries:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

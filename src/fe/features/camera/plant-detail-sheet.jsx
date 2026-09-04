@@ -25,6 +25,7 @@ import {
   BookOpen,
   History,
   Shield,
+  Sprout
 } from "lucide-react";
 import BotanistChatWindow from "../botanist_chat/components/botanist-chat-window";
 
@@ -49,9 +50,11 @@ function DetailRow({ icon: Icon, label, value, accent = false }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function PlantDetailSheet({ arMetadata, identifyResult, isOpen, onClose }) {
+export default function PlantDetailSheet({ arMetadata, identifyResult, isOpen, onClose, onScanComplete }) {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [hasLogged, setHasLogged] = useState(false);
+  const [isLogging, setIsLogging] = useState(false);
 
   // Animate in/out
   useEffect(() => {
@@ -62,6 +65,7 @@ export default function PlantDetailSheet({ arMetadata, identifyResult, isOpen, o
     } else {
       setIsVisible(false);
       setIsChatOpen(false);
+      setHasLogged(false);
     }
   }, [isOpen]);
 
@@ -180,19 +184,52 @@ export default function PlantDetailSheet({ arMetadata, identifyResult, isOpen, o
           )}
         </div>
 
-        {/* CTA — Ask Botanist AI */}
+        {/* CTA — Actions */}
         <div
-          className="flex-shrink-0 px-5 py-4"
+          className="flex-shrink-0 px-5 py-4 flex gap-3"
           style={{ borderTop: "1px solid rgba(255,255,255,0.07)", background: "rgba(0,0,0,0.3)" }}
         >
           <button
             id="plant-detail-chat-btn"
             onClick={() => setIsChatOpen(true)}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl shadow-md font-semibold text-sm bg-primary text-muted-light"
-            style={{ letterSpacing: "0.02em" }}
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl shadow-md font-semibold text-sm text-muted-light border border-white/20"
+            style={{ letterSpacing: "0.02em", background: "rgba(255,255,255,0.1)" }}
           >
             <Sparkles size={16} />
-            Ask the Botanist AI
+            Ask Botanist AI
+          </button>
+          
+          <button
+            onClick={async () => {
+              if (hasLogged || !onScanComplete || !identifyResult) return;
+              setIsLogging(true);
+              try {
+                // Wait for the parent to finish the API request
+                await onScanComplete(identifyResult);
+                setHasLogged(true);
+              } catch (e) {
+                console.error(e);
+              } finally {
+                setIsLogging(false);
+              }
+            }}
+            disabled={hasLogged || isLogging}
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl shadow-md font-semibold text-sm bg-primary text-muted-light disabled:opacity-50"
+            style={{ letterSpacing: "0.02em" }}
+          >
+            {hasLogged ? (
+              <>
+                <Leaf size={16} className="text-white" />
+                Logged!
+              </>
+            ) : isLogging ? (
+              "Logging..."
+            ) : (
+              <>
+                <Sprout size={16} />
+                Log to Journal
+              </>
+            )}
           </button>
         </div>
       </div>

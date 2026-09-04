@@ -155,9 +155,8 @@ export default function CameraScanner({ onScanComplete }) {
 
       setScanState(SCAN_STATE.SUCCESS);
 
-      // Fire immediately so the parent (dashboard) gets the result for gamification.
-      // The dashboard's handleScanComplete no longer automatically closes the camera.
-      onScanComplete?.(resultData);
+      // Do not fire onScanComplete automatically anymore.
+      // We let the user manually log the discovery from the Plant Detail Sheet.
     } catch (err) {
       setScanError(err.message ?? "An unknown error occurred.");
       setScanState(SCAN_STATE.ERROR);
@@ -418,6 +417,7 @@ export default function CameraScanner({ onScanComplete }) {
         identifyResult={identifyResult}
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
+        onScanComplete={onScanComplete}
       />
     </div>
   );
