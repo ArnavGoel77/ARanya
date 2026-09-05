@@ -108,3 +108,34 @@ export async function getArMetadata(plantId) {
 
   return response.json();
 }
+
+// ---------------------------------------------------------------------------
+// populatePlantDb  →  POST /api/v1/vision/populate
+// ---------------------------------------------------------------------------
+
+/**
+ * Triggers the backend Gemini pipeline to generate and store metadata for a new plant.
+ *
+ * @param {string} scientificName
+ * @param {string} commonName
+ * @returns {Promise<{ success: boolean, data: { identified_plant_id: string } }>}
+ */
+export async function populatePlantDb(scientificName, commonName) {
+  const response = await fetch(`${API_BASE_URL}/api/v1/vision/populate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      scientific_name: scientificName,
+      common_name: commonName,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorJson = await response.json().catch(() => ({}));
+    throw new Error(errorJson.error || `populatePlantDb: HTTP ${response.status}`);
+  }
+
+  return response.json();
+}

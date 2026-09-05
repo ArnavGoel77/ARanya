@@ -50,7 +50,7 @@ function DetailRow({ icon: Icon, label, value, accent = false }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function PlantDetailSheet({ arMetadata, identifyResult, isOpen, onClose, onScanComplete }) {
+export default function PlantDetailSheet({ arMetadata, identifyResult, isOpen, onClose, onScanComplete, isPopulating }) {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [hasLogged, setHasLogged] = useState(false);
@@ -171,7 +171,22 @@ export default function PlantDetailSheet({ arMetadata, identifyResult, isOpen, o
           )}
 
           {/* Detail rows */}
-          {identifyResult?.is_in_database === false ? (
+          {isPopulating ? (
+            <div className="py-8 text-center mt-2 flex flex-col items-center justify-center">
+              <div className="mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-4 bg-primary" style={{ background: "rgba(22, 101, 52, 0.15)" }}>
+                <svg className="animate-spin text-primary" style={{ width: 24, height: 24 }} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+              </div>
+              <p className="text-sm text-muted-light font-medium mb-1 animate-pulse">
+                Fetching botanical data...
+              </p>
+              <p className="text-xs text-muted-dark leading-relaxed px-4">
+                Our AI Botanist is generating a detailed profile for this species. This will only take a moment.
+              </p>
+            </div>
+          ) : identifyResult?.is_in_database === false ? (
             <div className="py-6 text-center mt-2">
               <div className="mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-3" style={{ background: "rgba(255,255,255,0.06)" }}>
                 <Info className="text-muted-dark" size={24} />
