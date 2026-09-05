@@ -19,6 +19,8 @@ export default function DashboardPage() {
   };
   const [locationText, setLocationText] = useState("Locating...");
   const [currentCoords, setCurrentCoords] = useState({ latitude: 0, longitude: 0 });
+  const [dailyFacts, setDailyFacts] = useState([]);
+  const [isFactLoading, setIsFactLoading] = useState(true);
   const { currentUser } = useAuth();
 
   useEffect(() => {
@@ -46,6 +48,25 @@ export default function DashboardPage() {
     } else {
       setLocationText("Geolocation unavailable");
     }
+  }, []);
+
+  useEffect(() => {
+    async function fetchFacts() {
+      try {
+        const res = await fetch('/api/daily-fact');
+        const data = await res.json();
+        setDailyFacts(data.facts);
+      } catch (error) {
+        setDailyFacts([
+          "India hosts 8% of the world's biodiversity, including thousands of medicinal plants used in Ayurveda for millennia.",
+          "The Banyan tree (Ficus benghalensis), India's national tree, can cover acres of land with its prop roots.",
+          "Neem (Azadirachta indica) is widely known as the 'village pharmacy' due to its myriad of medicinal uses."
+        ]);
+      } finally {
+        setIsFactLoading(false);
+      }
+    }
+    fetchFacts();
   }, []);
 
   const handleScanComplete = async (result) => {
@@ -98,8 +119,6 @@ export default function DashboardPage() {
             <Camera size={32} color="#ffffff" strokeWidth={1.5} />
           </div>
 
-          {/* "Ask the guide" opens the global chat via the sidebar's state —
-              the global App.jsx handles it, so we use a custom event here */}
           <button
             className="ask-button"
             onClick={(e) => {
@@ -116,6 +135,22 @@ export default function DashboardPage() {
             <h2 className="species-name">Phyllanthus emblica</h2>
             <p className="common-name">Indian gooseberry · Amla</p>
           </div>
+        </div>
+
+        <div className="daily-fact-container">
+          <h3 className="daily-fact-title">
+            <Sparkles size={16} color="#a08355" />
+            Daily Botanical Facts
+          </h3>
+          {isFactLoading ? (
+            <div className="daily-fact-shimmer"></div>
+          ) : (
+            <ul className="daily-fact-list">
+              {dailyFacts?.map((fact, index) => (
+                <li key={index} className="daily-fact-text">{fact}</li>
+              ))}
+            </ul>
+          )}
         </div>
       </main>
 
