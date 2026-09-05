@@ -187,6 +187,7 @@ const generate_offline_payload = async (req, res) => {
     // Only send JSON error if the zip download hasn't started yet
     if (!res.headersSent) {
       res.status(500).json({ success: false, error: error.message });
+    }
   }
 };
 
