@@ -128,10 +128,14 @@ export default function PlantDetailSheet({ arMetadata, identifyResult, isOpen, o
               )}
             </div>
             <h2 className="text-lg font-bold text-muted-light leading-tight truncate">
-              {arMetadata?.common_name ?? "Unknown Species"}
+              {identifyResult?.is_in_database === false 
+                ? (identifyResult.external_data?.common_name || identifyResult.external_data?.scientific_name || "Unknown Plant")
+                : (arMetadata?.common_name ?? "Unknown Species")}
             </h2>
             <p className="text-sm italic text-muted-dark mt-0.5">
-              {arMetadata?.scientific_name ?? identifyResult?.identified_plant_id}
+              {identifyResult?.is_in_database === false 
+                ? identifyResult.external_data?.scientific_name
+                : (arMetadata?.scientific_name ?? identifyResult?.identified_plant_id)}
             </p>
           </div>
 
@@ -167,7 +171,19 @@ export default function PlantDetailSheet({ arMetadata, identifyResult, isOpen, o
           )}
 
           {/* Detail rows */}
-          {arMetadata ? (
+          {identifyResult?.is_in_database === false ? (
+            <div className="py-6 text-center mt-2">
+              <div className="mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-3" style={{ background: "rgba(255,255,255,0.06)" }}>
+                <Info className="text-muted-dark" size={24} />
+              </div>
+              <p className="text-sm text-muted-light font-medium mb-1">
+                Not in Database
+              </p>
+              <p className="text-xs text-muted-dark leading-relaxed px-4">
+                We identified this plant, but it isn't fully registered in the ARanya collection yet. Ask the Botanist AI to learn more about it!
+              </p>
+            </div>
+          ) : arMetadata ? (
             <div>
               <DetailRow icon={Leaf}         label="Family"                  value={arMetadata.plant_family} />
               <DetailRow icon={MapPin}        label="Native Region"           value={arMetadata.native_region} />
@@ -199,38 +215,40 @@ export default function PlantDetailSheet({ arMetadata, identifyResult, isOpen, o
             Ask Botanist AI
           </button>
           
-          <button
-            onClick={async () => {
-              if (hasLogged || !onScanComplete || !identifyResult) return;
-              setIsLogging(true);
-              try {
-                // Wait for the parent to finish the API request
-                await onScanComplete(identifyResult);
-                setHasLogged(true);
-              } catch (e) {
-                console.error(e);
-              } finally {
-                setIsLogging(false);
-              }
-            }}
-            disabled={hasLogged || isLogging}
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl shadow-md font-semibold text-sm bg-primary text-muted-light disabled:opacity-50"
-            style={{ letterSpacing: "0.02em" }}
-          >
-            {hasLogged ? (
-              <>
-                <Leaf size={16} className="text-white" />
-                Logged!
-              </>
-            ) : isLogging ? (
-              "Logging..."
-            ) : (
-              <>
-                <Sprout size={16} />
-                Log to Journal
-              </>
-            )}
-          </button>
+          {identifyResult?.is_in_database !== false && (
+            <button
+              onClick={async () => {
+                if (hasLogged || !onScanComplete || !identifyResult) return;
+                setIsLogging(true);
+                try {
+                  // Wait for the parent to finish the API request
+                  await onScanComplete(identifyResult);
+                  setHasLogged(true);
+                } catch (e) {
+                  console.error(e);
+                } finally {
+                  setIsLogging(false);
+                }
+              }}
+              disabled={hasLogged || isLogging}
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl shadow-md font-semibold text-sm bg-primary text-muted-light disabled:opacity-50"
+              style={{ letterSpacing: "0.02em" }}
+            >
+              {hasLogged ? (
+                <>
+                  <Leaf size={16} className="text-white" />
+                  Logged!
+                </>
+              ) : isLogging ? (
+                "Logging..."
+              ) : (
+                <>
+                  <Sprout size={16} />
+                  Log to Journal
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
 
@@ -238,7 +256,7 @@ export default function PlantDetailSheet({ arMetadata, identifyResult, isOpen, o
       <BotanistChatWindow
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
-        plantContext={arMetadata}
+        plantContext={identifyResult?.is_in_database === false ? identifyResult.external_data : arMetadata}
       />
     </>
   );
