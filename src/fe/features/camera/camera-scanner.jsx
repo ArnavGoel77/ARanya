@@ -37,6 +37,9 @@ const AUTO_SCAN_INTERVAL_MS = 2000;
 /** How long (ms) the result card stays visible before auto-resuming scans. */
 const AUTO_RESUME_MS = 8000;
 
+/** Minimum acceptable confidence score for a successful identification. */
+export const CONFIDENCE_THRESHOLD = 0.6;
+
 const SCAN_STATE = Object.freeze({
   IDLE: "idle",
   CAPTURING: "capturing",
@@ -167,9 +170,18 @@ const CameraScanner = forwardRef(function CameraScanner({ onScanComplete, onModa
       if (resultData.requires_population) {
         setIsPopulating(true);
         populatePlantDb(resultData.external_data.scientific_name, resultData.external_data.common_name)
-          .then(() => getArMetadata(resultData.identified_plant_id))
-          .then((meta) => {
-             setArMetadata(meta.data);
+          .then((response) => {
+             const populatedData = response.data;
+             setArMetadata(populatedData.metadata);
+             
+             // Update the current identifyResult so that it looks like a DB plant
+             setIdentifyResult(prev => ({
+               ...prev,
+               identified_plant_id: populatedData.identified_plant_id,
+               is_in_database: true,
+               requires_population: false
+             }));
+             
              setIsPopulating(false);
           })
           .catch((err) => {
@@ -398,6 +410,11 @@ const CameraScanner = forwardRef(function CameraScanner({ onScanComplete, onModa
               {identifyResult.requires_rare_highlight && (
                 <span className="text-xs font-bold px-1.5 py-0.5 rounded-xl bg-accent text-muted-light">
                   RARE
+                </span>
+              )}
+              {identifyResult.confidence_score < CONFIDENCE_THRESHOLD && (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md text-white/90 ml-1" style={{ backgroundColor: "#d97706" }}>
+                  LOW CONFIDENCE
                 </span>
               )}
               {/* Tap indicator */}

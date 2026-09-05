@@ -242,7 +242,7 @@ export default function LandingPage() {
                   <span className="lp-about-dot" style={{ background: '#a07040' }} />
                   <div>
                     <strong>Species Map</strong>
-                    <span>Explore biodiversity hotspots and community sightings on an interactive map.</span>
+                    <span>Track your botanical journey by mapping the exact locations of your personal plant sightings.</span>
                   </div>
                 </li>
                 <li>
