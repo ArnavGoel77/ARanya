@@ -4,6 +4,7 @@ const fs = require('fs');
 const archiver = require('archiver');
 const axios = require('axios');
 const FormData = require('form-data');
+const { GoogleGenAI } = require('@google/genai');
 
 const identify_plant = async (req, res) => {
   try {
@@ -83,20 +84,68 @@ const identify_plant = async (req, res) => {
        }
     } else {
        // Pl@ntNet identified a plant, but it's not in our database.
-       identified_plant_id = "external_plant";
-       is_native_to_region = false;
-       requires_rare_highlight = false;
-       is_in_database = false;
-
        let commonName = "Unknown Species";
        if (bestMatch.species.commonNames && bestMatch.species.commonNames.length > 0) {
            commonName = bestMatch.species.commonNames[0];
        }
 
-       external_data = {
-           common_name: commonName,
-           scientific_name: scientificName
-       };
+       if (commonName !== "Unknown Species" && process.env.GEMINI_DATA_API_KEY) {
+           // We have a valid name and an API key! Let's auto-populate the database.
+           try {
+               const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_DATA_API_KEY });
+               const prompt = `You are a botanical data expert. I need JSON metadata for the plant: Scientific Name: "${scientificName}", Common Name: "${commonName}".
+               Please generate a strict JSON object with EXACTLY these fields:
+               {
+                 "scientific_name": "${scientificName}",
+                 "common_name": "${commonName}",
+                 "plant_family": "...",
+                 "native_region": "...",
+                 "ecological_importance": "...",
+                 "conservation_status": "...",
+                 "is_rare": boolean,
+                 "threats": "...",
+                 "conservation_best_practices": "...",
+                 "historical_context": "..."
+               }`;
+               
+               const response = await ai.models.generateContent({
+                 model: 'gemini-3.5-flash',
+                 contents: prompt,
+                 config: { responseMimeType: 'application/json' }
+               });
+               
+               const generatedData = JSON.parse(response.text);
+               
+               // Generate a slugified ID
+               const slugId = scientificName.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+               
+               // Add to Firestore
+               await db.collection('plants').doc(slugId).set(generatedData);
+               
+               // Return as if it was already in the database
+               identified_plant_id = slugId;
+               is_native_to_region = false; 
+               requires_rare_highlight = generatedData.is_rare || false;
+               is_in_database = true;
+               external_data = null;
+               
+           } catch (genErr) {
+               console.error("Gemini auto-populate failed:", genErr.message);
+               // Fallback to external plant if Gemini fails
+               identified_plant_id = "external_plant";
+               is_native_to_region = false;
+               requires_rare_highlight = false;
+               is_in_database = false;
+               external_data = { common_name: commonName, scientific_name: scientificName };
+           }
+       } else {
+           // Unknown species or no API key, skip Gemini and use external fallback
+           identified_plant_id = "external_plant";
+           is_native_to_region = false;
+           requires_rare_highlight = false;
+           is_in_database = false;
+           external_data = { common_name: commonName, scientific_name: scientificName };
+       }
     }
 
     // 5. Return the formatted response exactly matching the offline model structure

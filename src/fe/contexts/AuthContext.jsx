@@ -15,13 +15,15 @@ export function AuthProvider({ children }) {
 
   // For Hackathon Demo Mode
   const setDemoUser = () => {
-    setCurrentUser({
+    const demo = {
       uid: "demo_user_123",
       displayName: "Demo User",
       email: "demo@aranya.app",
       photoURL: "https://api.dicebear.com/9.x/notionists/svg?seed=Felix",
       isDemo: true
-    });
+    };
+    setCurrentUser(demo);
+    localStorage.setItem("aranya_demo_user", JSON.stringify(demo));
   };
 
   const loginWithGoogle = async () => {
@@ -77,12 +79,21 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     if (currentUser?.isDemo) {
       setCurrentUser(null);
+      localStorage.removeItem("aranya_demo_user");
     } else {
       await signOut(auth);
     }
   };
 
   useEffect(() => {
+    // Check if there is a saved demo user
+    const savedDemo = localStorage.getItem("aranya_demo_user");
+    if (savedDemo) {
+      setCurrentUser(JSON.parse(savedDemo));
+      setLoading(false);
+      return;
+    }
+
     // Only listen to Firebase auth state if we aren't using the Demo user.
     // If we are using Demo user, Firebase auth is ignored.
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -99,6 +110,7 @@ export function AuthProvider({ children }) {
 
   const value = {
     currentUser,
+    loading,
     loginWithGoogle,
     signupWithGoogle,
     setDemoUser,

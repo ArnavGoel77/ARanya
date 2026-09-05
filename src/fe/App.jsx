@@ -367,8 +367,12 @@ import { PWAProvider, usePWA } from "@fe/hooks/usePWA";
 
 /* ─── Protected Route ────────────────────────────────────────────────────── */
 function ProtectedRoute({ children }) {
-  const { currentUser } = useAuth();
+  const { currentUser, loading } = useAuth();
   
+  if (loading) {
+    return <PageLoader />;
+  }
+
   if (!currentUser) {
     return <Navigate to="/" replace />;
   }
