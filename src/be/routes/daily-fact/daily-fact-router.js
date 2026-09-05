@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.6-flash',
       contents: 'Provide 3 distinct, interesting, and obscure facts about native Indian flora, biodiversity, or medicinal plants. Each fact should be 2 sentences or less.',
       config: {
         responseMimeType: 'application/json',
