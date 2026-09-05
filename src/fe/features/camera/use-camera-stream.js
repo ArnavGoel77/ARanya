@@ -24,10 +24,14 @@ import { useRef, useState, useEffect, useCallback } from "react";
 export default function useCameraStream() {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const isStoppedRef = useRef(false);
+  const requestCountRef = useRef(0);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamError, setStreamError] = useState(null);
 
   const stopStream = useCallback(() => {
+    isStoppedRef.current = true;
+    requestCountRef.current += 1; // invalidate any pending requests
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
@@ -39,6 +43,8 @@ export default function useCameraStream() {
   }, []);
 
   const startStream = useCallback(async () => {
+    isStoppedRef.current = false;
+    const currentRequestId = ++requestCountRef.current;
     setStreamError(null);
     setIsStreaming(false);
 
@@ -57,6 +63,12 @@ export default function useCameraStream() {
         },
         audio: false,
       });
+
+      // If the user closed the camera, OR if a NEW stream request was started before this one finished:
+      if (isStoppedRef.current || currentRequestId !== requestCountRef.current) {
+        mediaStream.getTracks().forEach((track) => track.stop());
+        return;
+      }
 
       streamRef.current = mediaStream;
 

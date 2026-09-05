@@ -1,4 +1,15 @@
-require('dotenv').config();
+const dotenv = require('dotenv');
+const fs = require('fs');
+const path = require('path');
+
+// Load standard .env
+dotenv.config();
+
+// Load .env.local (overrides .env) to match Vite's behavior
+const envLocalPath = path.resolve(__dirname, '../../.env.local');
+if (fs.existsSync(envLocalPath)) {
+  dotenv.config({ path: envLocalPath, override: true });
+}
 const express = require('express');
 const cors = require('cors');
 

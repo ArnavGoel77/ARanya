@@ -13,82 +13,18 @@ import './LandingPage.css';
 
 /* ─── Indian native plant images ─────────────────────────────────────────────
    All URLs are from Unsplash (free-to-use) featuring Indian flora.
-   Fallbacks use picsum IDs with lush green tones.
+   Fallbacks use picsum IDs.
 ─────────────────────────────────────────────────────────────────────────────── */
-const PLANT_ITEMS = [
-  {
-    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop',
-    title: 'Sacred Lotus'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1611843467160-25afb8df1074?w=600&h=400&fit=crop',
-    title: 'Tropical Leaves'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1567225557594-88d73e55f2cb?w=600&h=400&fit=crop',
-    title: 'Indian Marigold'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1604762512526-b1a1a7fc3d45?w=600&h=400&fit=crop',
-    title: 'Jungle Ferns'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=600&h=400&fit=crop',
-    title: 'Neem Leaves'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1574684891174-df6b02ab38d7?w=600&h=400&fit=crop',
-    title: 'Banyan Roots'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=600&h=400&fit=crop',
-    title: 'Forest Path'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1518495973542-4542c06a5843?w=600&h=400&fit=crop',
-    title: 'Sunlit Canopy'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1498855926480-d98e83099315?w=600&h=400&fit=crop',
-    title: 'Jasmine Blossoms'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1502651023060-a1d1e1c63b88?w=600&h=400&fit=crop',
-    title: 'Green Fronds'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?w=600&h=400&fit=crop',
-    title: 'Lotus Pond'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?w=600&h=400&fit=crop',
-    title: 'Rain Forest'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop',
-    title: 'Bamboo Grove'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?w=600&h=400&fit=crop',
-    title: 'Peepal Leaves'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1504700610630-ac6aba3536d3?w=600&h=400&fit=crop',
-    title: 'Ashoka Bloom'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=600&h=400&fit=crop',
-    title: 'Wildflowers'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1487530811015-780ddf47abd4?w=600&h=400&fit=crop',
-    title: 'Tulsi Shrub'
-  },
-  {
-    image: 'https://images.unsplash.com/photo-1444065381814-865dc9da92c0?w=600&h=400&fit=crop',
-    title: 'Indian Lily'
-  },
+const NATIVE_PLANT_NAMES = [
+  'Sacred Lotus', 'Banyan Tree', 'Neem Leaves', 'Indian Marigold',
+  'Tulsi Shrub', 'Jasmine Blossoms', 'Peepal Leaves', 'Ashoka Bloom',
+  'Banana Leaves', 'Tamarind', 'Coconut Fronds', 'Mango Leaves',
+  'Parijat', 'Turmeric', 'Hibiscus', 'Moringa', 'Curry Leaves', 'Indian Aloe'
 ];
+const PLANT_ITEMS = NATIVE_PLANT_NAMES.map((name, i) => ({
+  image: `https://loremflickr.com/600/400/plant,flora,india?lock=${i + 1}`,
+  title: name
+}));
 
 /* ─── Modal / form states ──────────────────────────────────────────────────── */
 const VIEWS = { HOME: 'home', SIGNUP: 'signup', LOGIN: 'login', ABOUT: 'about' };
@@ -101,11 +37,6 @@ export default function LandingPage() {
   const [errorMsg, setErrorMsg] = useState("");
 
   const goToApp = () => navigate('/app');
-
-  // If already logged in, redirect straight to app
-  if (currentUser) {
-    goToApp();
-  }
 
   const handleSignup = async () => {
     setErrorMsg("");
@@ -162,15 +93,15 @@ export default function LandingPage() {
 
       {/* ── Top bar ──────────────────────────────────────────────────── */}
       <header className="lp-topbar">
-        <div className="lp-brand">
-          <div className="lp-brand-badge">
-            <Leaf size={16} color="#e5dcc5" />
-          </div>
-          <span className="lp-brand-name">ARanya</span>
-        </div>
         <button className="lp-nav-about" onClick={() => setView(v => v === VIEWS.ABOUT ? VIEWS.HOME : VIEWS.ABOUT)}>
           About
         </button>
+        <div className="lp-brand">
+          <span className="lp-brand-name">ARanya</span>
+          <div className="lp-brand-badge" style={{ background: 'transparent' }}>
+            <img src="/logo.png" alt="ARanya Logo" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+          </div>
+        </div>
       </header>
 
       {/* ── Central card ─────────────────────────────────────────────── */}
@@ -191,30 +122,39 @@ export default function LandingPage() {
               Identify plants, explore species maps, and chat with an AI botanist guide — all powered by India's native flora.
             </p>
 
-            <div className="lp-cta-grid">
-              {isInstallable && (
-                <button 
-                  className="lp-btn lp-btn--primary lp-btn--wide" 
-                  style={{ background: "linear-gradient(135deg, #2a3e34, #4a7c59)", border: "none" }} 
-                  onClick={installApp}
-                >
-                  <Download size={16} />
-                  Install Web App
-                </button>
-              )}
-              <button className="lp-btn lp-btn--primary" onClick={() => setView(VIEWS.SIGNUP)}>
-                <User size={16} />
-                Sign Up
-              </button>
-              <button className="lp-btn lp-btn--secondary" onClick={() => setView(VIEWS.LOGIN)}>
-                <Lock size={16} />
-                Log In
-              </button>
-              <button className="lp-btn lp-btn--ghost lp-btn--wide" onClick={handleDemo}>
-                <ArrowRight size={16} />
-                Demo Account
-              </button>
-            </div>
+              <div className="lp-cta-grid">
+                {isInstallable && (
+                  <button 
+                    className="lp-btn lp-btn--primary lp-btn--wide" 
+                    style={{ background: "linear-gradient(135deg, #2a3e34, #4a7c59)", border: "none" }} 
+                    onClick={installApp}
+                  >
+                    <Download size={16} />
+                    Install Web App
+                  </button>
+                )}
+                {currentUser ? (
+                  <button className="lp-btn lp-btn--primary lp-btn--wide" onClick={goToApp}>
+                    <ArrowRight size={16} />
+                    Open App
+                  </button>
+                ) : (
+                  <>
+                    <button className="lp-btn lp-btn--primary" onClick={() => setView(VIEWS.SIGNUP)}>
+                      <User size={16} />
+                      Sign Up
+                    </button>
+                    <button className="lp-btn lp-btn--secondary" onClick={() => setView(VIEWS.LOGIN)}>
+                      <Lock size={16} />
+                      Log In
+                    </button>
+                    <button className="lp-btn lp-btn--ghost lp-btn--wide" onClick={handleDemo}>
+                      <ArrowRight size={16} />
+                      Demo Account
+                    </button>
+                  </>
+                )}
+              </div>
 
             <button className="lp-about-nudge" onClick={() => setView(VIEWS.ABOUT)}>
               <span>What is ARanya?</span>
@@ -284,9 +224,8 @@ export default function LandingPage() {
             </div>
 
             <div className="lp-about-body">
-              <div className="lp-about-icon">
-                <Leaf size={28} color="#7ec87e" />
-                <Leaf size={28} color="#2a3e34" />
+              <div className="lp-about-icon" style={{ background: 'transparent', border: 'none' }}>
+                <img src="/logo.png" alt="ARanya Logo" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover' }} />
               </div>
               <p>
                 <strong>ARanya</strong> (अरण्य) — Sanskrit for <em>forest</em> — is a biodiversity exploration platform built for India's rich native flora.
