@@ -38,11 +38,16 @@ export default function LandingPage() {
 
   const goToApp = () => navigate('/app');
 
+  React.useEffect(() => {
+    if (currentUser) {
+      navigate('/app');
+    }
+  }, [currentUser, navigate]);
+
   const handleSignup = async () => {
     setErrorMsg("");
     try {
       await signupWithGoogle();
-      goToApp();
     } catch (err) {
       setErrorMsg(err.message || "Failed to sign up with Google");
     }
@@ -52,7 +57,6 @@ export default function LandingPage() {
     setErrorMsg("");
     try {
       await loginWithGoogle();
-      goToApp();
     } catch (err) {
       setErrorMsg(err.message || "Failed to log in with Google");
     }
@@ -60,7 +64,6 @@ export default function LandingPage() {
 
   const handleDemo = () => {
     setDemoUser();
-    goToApp();
   };
 
   return (

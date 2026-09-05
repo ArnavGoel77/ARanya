@@ -20,9 +20,13 @@ const visionRouter = require('./routes/vision/vision_router');
 const plantsRouter = require('./routes/plants/plants_router');
 const usersRouter = require('./routes/users/users-router');
 const dailyFactRouter = require('./routes/daily-fact/daily-fact-router');
+const { initDailyFactCron } = require('./cron/daily-fact-cron');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize background jobs
+initDailyFactCron();
 
 
 // Enable CORS so your React frontend (port 5173/3000) can talk to Express (port 5000)
