@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Award, Star, Zap, Shield, Compass, ChevronRight, Sprout, Flame, LogOut } from "lucide-react";
 import { useAuth } from "@fe/contexts/AuthContext";
 import { db } from "@fe/config/firebase";
@@ -19,61 +19,14 @@ const BADGE_DIRECTORY = [
 ];
 
 const ShinyBadgeCard = ({ badge }) => {
-  const cardRef = useRef(null);
-  const [style, setStyle] = useState({});
   const [isFlipped, setIsFlipped] = useState(false);
-
-  const handleMouseMove = useCallback((e) => {
-    if (!cardRef.current || isFlipped) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    const rotateX = -((y - centerY) / centerY) * 15;
-    const rotateY = ((x - centerX) / centerX) * 15;
-    const glareX = (x / rect.width) * 100;
-    const glareY = (y / rect.height) * 100;
-    setStyle({
-      transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`,
-      '--glare-x': `${glareX}%`,
-      '--glare-y': `${glareY}%`
-    });
-  }, [isFlipped]);
-
-  const handleMouseLeave = useCallback(() => {
-    if (isFlipped) return;
-    setStyle({
-      transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
-      '--glare-x': '50%',
-      '--glare-y': '50%',
-      transition: 'transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)'
-    });
-  }, [isFlipped]);
-
-  const handleMouseEnter = useCallback(() => {
-    if (isFlipped) return;
-    setStyle((prev) => ({ ...prev, transition: 'none' }));
-  }, [isFlipped]);
-
-  const handleClick = useCallback(() => {
-    setIsFlipped(f => !f);
-    setStyle({
-      transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
-      transition: 'transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)'
-    });
-  }, []);
 
   return (
     <div
       className={`gami-badge-wrapper ${badge.isUnlocked ? "unlocked" : "locked"} ${isFlipped ? "flipped" : ""}`}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      onMouseEnter={handleMouseEnter}
-      onClick={handleClick}
+      onClick={() => setIsFlipped(f => !f)}
     >
-      <div className="gami-badge-card" ref={cardRef} style={style}>
-        <div className="gami-glare"></div>
+      <div className="gami-badge-card">
         <div className="gami-badge-inner">
           <div className={`gami-badge-front tier-${badge.tier}`}>
             <div className="gami-badge-icon-wrapper">
