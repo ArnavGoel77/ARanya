@@ -33,20 +33,20 @@ import "./app-layout.css";
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, isChunkError: false };
   }
   static getDerivedStateFromError(error) {
-    return { hasError: true, error };
+    const isChunkError = !!(
+      error?.message?.match(/Failed to fetch dynamically imported module/i) || 
+      error?.message?.match(/Importing a module script failed/i) ||
+      error?.name === 'ChunkLoadError'
+    );
+    return { hasError: true, error, isChunkError };
   }
   componentDidCatch(error, info) {
     console.error("[ARanya ErrorBoundary]", error, info);
     
-    // Auto-reload on Vite chunk load errors (stale cache after new deployment)
-    const isChunkError = error?.message?.match(/Failed to fetch dynamically imported module/i) || 
-                         error?.message?.match(/Importing a module script failed/i) ||
-                         error?.name === 'ChunkLoadError';
-                         
-    if (isChunkError) {
+    if (this.state.isChunkError) {
       const lastReload = sessionStorage.getItem('chunk_reload_time');
       const now = Date.now();
       // Prevent infinite reload loops (only reload once per 10 seconds)
@@ -56,9 +56,15 @@ class ErrorBoundary extends React.Component {
         // The real issue is the Service Worker caching the old index.html.
         // We MUST unregister it before reloading, otherwise the reload just gets the old HTML again!
         if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then((registrations) => {
+          navigator.serviceWorker.getRegistrations().then(async (registrations) => {
             for (let registration of registrations) {
-              registration.unregister();
+              await registration.unregister();
+            }
+            if ('caches' in window) {
+              const keys = await caches.keys();
+              for (const key of keys) {
+                await caches.delete(key);
+              }
             }
             window.location.reload(true);
           }).catch(() => {
@@ -72,6 +78,12 @@ class ErrorBoundary extends React.Component {
   }
   render() {
     if (this.state.hasError) {
+      // If it's a chunk error, do NOT show the red error screen.
+      // Show the silent loading spinner while the app purges caches and reloads.
+      if (this.state.isChunkError) {
+        return <PageLoader />;
+      }
+
       return (
         <div style={{
           minHeight: "100vh", display: "flex", flexDirection: "column",
@@ -93,8 +105,12 @@ class ErrorBoundary extends React.Component {
             onClick={() => {
               this.setState({ hasError: false, error: null });
               if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then((regs) => {
-                  for (let reg of regs) { reg.unregister(); }
+                navigator.serviceWorker.getRegistrations().then(async (regs) => {
+                  for (let reg of regs) { await reg.unregister(); }
+                  if ('caches' in window) {
+                    const keys = await caches.keys();
+                    for (const key of keys) { await caches.delete(key); }
+                  }
                   window.location.reload(true);
                 }).catch(() => window.location.reload(true));
               } else {
