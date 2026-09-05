@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Sparkles, X, Camera, MapPin } from "lucide-react";
 
 import CameraScanner from "@fe/features/camera/camera-scanner";
@@ -7,6 +7,16 @@ import "./dashboard-page.css";
 
 export default function DashboardPage() {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
+  const scannerRef = useRef(null);
+
+  const closeCamera = () => {
+    // Explicitly stop all camera tracks before unmounting so the
+    // hardware indicator light turns off immediately.
+    scannerRef.current?.stopStream();
+    setIsCameraOpen(false);
+    setIsCameraModalOpen(false);
+  };
   const [locationText, setLocationText] = useState("Locating...");
   const [currentCoords, setCurrentCoords] = useState({ latitude: 0, longitude: 0 });
   const { currentUser } = useAuth();
@@ -112,11 +122,17 @@ export default function DashboardPage() {
       {/* ── Fullscreen Camera Overlay ────────────────────────────────── */}
       {isCameraOpen && (
         <div className="fullscreen-overlay">
-          <button className="close-camera-button" onClick={() => setIsCameraOpen(false)}>
-            <X size={24} color="#ffffff" />
-          </button>
+          {/* Hide camera close button while a modal (detail sheet / chat) is open
+              to prevent overlapping touch targets in the top-right corner */}
+          {!isCameraModalOpen && (
+            <button className="close-camera-button" onClick={closeCamera}>
+              <X size={24} color="#ffffff" />
+            </button>
+          )}
           <CameraScanner
+            ref={scannerRef}
             onScanComplete={handleScanComplete}
+            onModalChange={setIsCameraModalOpen}
           />
         </div>
       )}

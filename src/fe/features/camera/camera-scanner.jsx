@@ -24,7 +24,7 @@
  *   text-muted-dark           → subtext / status labels
  */
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import useCameraStream from "./use-camera-stream.js";
 import useCaptureFrame from "./use-capture-frame.js";
 import useArTracking from "./use-ar-tracking.js";
@@ -60,8 +60,8 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
  *   }) => void
  * }} props
  */
-export default function CameraScanner({ onScanComplete }) {
-  const { videoRef, isStreaming, streamError, startStream } = useCameraStream();
+const CameraScanner = forwardRef(function CameraScanner({ onScanComplete, onModalChange }, ref) {
+  const { videoRef, isStreaming, streamError, startStream, stopStream } = useCameraStream();
   const { captureFrame } = useCaptureFrame(videoRef);
 
   const [scanState, setScanState] = useState(SCAN_STATE.IDLE);
@@ -69,6 +69,23 @@ export default function CameraScanner({ onScanComplete }) {
   const [scanError, setScanError] = useState(null);
   const [countdown, setCountdown] = useState(AUTO_SCAN_INTERVAL_MS / 1000);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  /**
+   * True after the first successful plant identification.
+   * Once set, the continuous auto-scan interval is permanently halted
+   * and subsequent scans are triggered manually by the shutter button.
+   */
+  const [hasCompletedInitialScan, setHasCompletedInitialScan] = useState(false);
+
+  // Notify parent whenever a modal (detail sheet) is open so it can
+  // hide the background camera close button to avoid overlapping touch targets.
+  useEffect(() => {
+    onModalChange?.(isDetailOpen);
+  }, [isDetailOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Expose stopStream to parent via ref so the close button can
+  // explicitly kill camera tracks before unmounting the component.
+  useImperativeHandle(ref, () => ({ stopStream }), [stopStream]);
 
   /** The `data` object from the last successful /vision/identify response. */
   const [identifyResult, setIdentifyResult] = useState(null);
@@ -145,7 +162,7 @@ export default function CameraScanner({ onScanComplete }) {
       const resultData = response.data;
       setIdentifyResult(resultData);
 
-      // Also fetch AR metadata so we can show plant details on the card
+      // Fetch AR metadata so we can show plant details on the chip / sheet
       try {
         const meta = await getArMetadata(resultData.identified_plant_id);
         setArMetadata(meta.data);
@@ -155,15 +172,22 @@ export default function CameraScanner({ onScanComplete }) {
 
       setScanState(SCAN_STATE.SUCCESS);
 
-      // Do not fire onScanComplete automatically anymore.
-      // We let the user manually log the discovery from the Plant Detail Sheet.
+      // Mark initial scan complete — this halts the auto-interval permanently.
+      // All subsequent scans are triggered manually via the shutter button.
+      setHasCompletedInitialScan(true);
+
+      // Stop the continuous scanning interval immediately on first success.
+      clearAllTimers();
+
+      // Do not fire onScanComplete automatically.
+      // The user logs discoveries manually from the Plant Detail Sheet.
     } catch (err) {
       setScanError(err.message ?? "An unknown error occurred.");
       setScanState(SCAN_STATE.ERROR);
     } finally {
       isBusyRef.current = false;
     }
-  }, [captureFrame, getCurrentPosition, onScanComplete]);
+  }, [captureFrame, getCurrentPosition, clearAllTimers, onScanComplete]);
 
   // ── Interval management ────────────────────────────────────────────────────
 
@@ -182,14 +206,16 @@ export default function CameraScanner({ onScanComplete }) {
   }, [clearAllTimers, runScan]);
 
   /**
-   * Resumes scanning automatically after AUTO_RESUME_MS elapses.
+   * Resets the result state ready for the next manual scan.
+   * After the initial scan completes, no auto-interval is restarted —
+   * the user drives all subsequent captures via the shutter button.
    */
   const resumeScanning = useCallback(() => {
     setIdentifyResult(null);
     setArMetadata(null);
     setScanState(SCAN_STATE.IDLE);
-    startScanningInterval();
-  }, [startScanningInterval]);
+    // Do NOT restart the interval — post-first-scan mode is fully manual.
+  }, []);
 
   // Start scanning as soon as the stream is live
   useEffect(() => {
@@ -201,17 +227,19 @@ export default function CameraScanner({ onScanComplete }) {
     return () => clearAllTimers();
   }, [isStreaming]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // When SUCCESS state is entered, pause interval and set auto-resume timer
+  // When SUCCESS state is entered, pause interval.
+  // After the first scan, no auto-resume timer is set — scanning is manual.
   useEffect(() => {
     if (scanState !== SCAN_STATE.SUCCESS) return;
-
     clearInterval(intervalRef.current);
     clearInterval(countdownIntervalRef.current);
-
-    autoResumeTimerRef.current = setTimeout(() => {
-      resumeScanning();
-    }, AUTO_RESUME_MS);
-
+    // Only auto-resume if the initial scan has NOT yet completed
+    // (i.e., this is still in the initial auto-scanning phase)
+    if (!hasCompletedInitialScan) {
+      autoResumeTimerRef.current = setTimeout(() => {
+        resumeScanning();
+      }, AUTO_RESUME_MS);
+    }
     return () => clearTimeout(autoResumeTimerRef.current);
   }, [scanState]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -236,11 +264,12 @@ export default function CameraScanner({ onScanComplete }) {
 
   const statusLabel = (() => {
     if (streamError)                          return `Camera error: ${streamError.message}`;
-    if (!isStreaming)                          return "Starting camera…";
-    if (scanState === SCAN_STATE.CAPTURING)   return "Capturing frame…";
-    if (scanState === SCAN_STATE.IDENTIFYING) return "Identifying species…";
+    if (!isStreaming)                          return "Starting camera\u2026";
+    if (scanState === SCAN_STATE.CAPTURING)   return "Capturing frame\u2026";
+    if (scanState === SCAN_STATE.IDENTIFYING) return "Identifying species\u2026";
     if (scanState === SCAN_STATE.SUCCESS)     return "Species identified!";
     if (scanState === SCAN_STATE.ERROR)       return scanError ?? "Scan failed.";
+    if (hasCompletedInitialScan)              return "Tap shutter to scan again";
     return `Next scan in ${countdown}s`;
   })();
 
@@ -355,27 +384,30 @@ export default function CameraScanner({ onScanComplete }) {
           {statusLabel}
         </p>
 
-        {/* Countdown ring — shown only while actively scanning */}
-        {!streamError && isStreaming && scanState !== SCAN_STATE.SUCCESS && (
+        {/* Shutter / countdown ring — always visible when streaming */}
+        {!streamError && isStreaming && (
           <div
             className="relative flex items-center justify-center"
             style={{ width: RING_SIZE, height: RING_SIZE, flexShrink: 0 }}
           >
-            <svg
-              width={RING_SIZE}
-              height={RING_SIZE}
-              viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
-              style={{ position: "absolute", top: 0, left: 0, transform: "rotate(-90deg)" }}
-              aria-hidden="true"
-            >
-              <circle cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RADIUS}
-                fill="none" stroke="#9ca3af" strokeWidth="4" opacity="0.3" />
-              <circle cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RADIUS}
-                fill="none" stroke={arcColor} strokeWidth="4" strokeLinecap="round"
-                strokeDasharray={CIRCUMFERENCE} strokeDashoffset={strokeDashoffset}
-                style={{ transition: "stroke-dashoffset 1s linear, stroke 0.3s ease" }}
-              />
-            </svg>
+            {/* Countdown ring arcs — only shown during the initial auto-scan phase */}
+            {scanState !== SCAN_STATE.SUCCESS && !hasCompletedInitialScan && (
+              <svg
+                width={RING_SIZE}
+                height={RING_SIZE}
+                viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+                style={{ position: "absolute", top: 0, left: 0, transform: "rotate(-90deg)" }}
+                aria-hidden="true"
+              >
+                <circle cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RADIUS}
+                  fill="none" stroke="#9ca3af" strokeWidth="4" opacity="0.3" />
+                <circle cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RADIUS}
+                  fill="none" stroke={arcColor} strokeWidth="4" strokeLinecap="round"
+                  strokeDasharray={CIRCUMFERENCE} strokeDashoffset={strokeDashoffset}
+                  style={{ transition: "stroke-dashoffset 1s linear, stroke 0.3s ease" }}
+                />
+              </svg>
+            )}
 
             <div
               className="relative z-10 flex items-center justify-center rounded-xl bg-black bg-opacity-60"
@@ -388,13 +420,21 @@ export default function CameraScanner({ onScanComplete }) {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                 </svg>
               ) : (
-                <svg className="text-primary" style={{ width: 22, height: 22 }}
-                  xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                  fill="none" stroke="currentColor" strokeWidth={2.5}
-                  strokeLinecap="round" strokeLinejoin="round" aria-label="Camera active">
-                  <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
+                <button
+                  id="camera-shutter-btn"
+                  onClick={(e) => { e.stopPropagation(); runScan(); }}
+                  disabled={isBusy}
+                  aria-label="Scan now"
+                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                >
+                  <svg className="text-primary" style={{ width: 22, height: 22 }}
+                    xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" strokeWidth={2.5}
+                    strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                  </svg>
+                </button>
               )}
             </div>
           </div>
@@ -421,6 +461,6 @@ export default function CameraScanner({ onScanComplete }) {
       />
     </div>
   );
-}
+});
 
-
+export default CameraScanner;
