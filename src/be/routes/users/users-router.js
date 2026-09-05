@@ -184,9 +184,19 @@ router.get('/:user_id/discoveries', async (req, res) => {
       const data = docSnap.data();
       const plantId = data.plant_id;
       
-      const plantSnap = await db.collection('plants').doc(plantId).get();
-      const plantData = plantSnap.exists ? plantSnap.data() : {};
-      
+      let plantData = {};
+      if (plantId === "mock_human") {
+        plantData = {
+          scientific_name: "Homo sapiens",
+          common_name: "Human (Demo Data)",
+          conservation_status: "Least Concern"
+        };
+      } else {
+        const plantSnap = await db.collection('plants').doc(plantId).get();
+        if (plantSnap.exists) {
+          plantData = plantSnap.data();
+        }
+      }
       discoveries.push({
         plant_id: plantId,
         scientific_name: plantData.scientific_name || "Unknown",

@@ -38,8 +38,9 @@ ${botanistSystemPrompt}
 ${contextHint}
 User Query: ${user_message}
 
-Please provide a response and suggest exactly 2 follow-up questions specific to what the user asked. Respond in JSON format exactly like this:
+Please provide a response, suggest exactly 2 follow-up questions specific to what the user asked, and generate a short (3-5 words) title for this conversation based on the user's query. Respond in JSON format exactly like this:
 {
+  "chat_title": "...",
   "reply_text": "...",
   "suggested_followup_queries": ["...", "..."]
 }

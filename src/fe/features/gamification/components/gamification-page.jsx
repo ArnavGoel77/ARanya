@@ -21,57 +21,59 @@ const BADGE_DIRECTORY = [
 const ShinyBadgeCard = ({ badge }) => {
   const cardRef = useRef(null);
   const [style, setStyle] = useState({});
+  const [isFlipped, setIsFlipped] = useState(false);
 
   const handleMouseMove = useCallback((e) => {
-    if (!cardRef.current) return;
+    if (!cardRef.current || isFlipped) return;
     const rect = cardRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-
-    // Calculate rotation limits (max 20 deg)
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
-    const rotateX = -((y - centerY) / centerY) * 20;
-    const rotateY = ((x - centerX) / centerX) * 20;
-
-    // Calculate glare position
+    const rotateX = -((y - centerY) / centerY) * 15;
+    const rotateY = ((x - centerX) / centerX) * 15;
     const glareX = (x / rect.width) * 100;
     const glareY = (y / rect.height) * 100;
-
     setStyle({
       transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.05, 1.05, 1.05)`,
       '--glare-x': `${glareX}%`,
       '--glare-y': `${glareY}%`
     });
-  }, [badge.isUnlocked]);
+  }, [isFlipped]);
 
   const handleMouseLeave = useCallback(() => {
+    if (isFlipped) return;
     setStyle({
       transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
       '--glare-x': '50%',
       '--glare-y': '50%',
       transition: 'transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)'
     });
-  }, [badge.isUnlocked]);
+  }, [isFlipped]);
 
   const handleMouseEnter = useCallback(() => {
-    setStyle((prev) => ({
-      ...prev,
-      transition: 'none' // Remove transition on enter to strictly follow mouse
-    }));
-  }, [badge.isUnlocked]);
+    if (isFlipped) return;
+    setStyle((prev) => ({ ...prev, transition: 'none' }));
+  }, [isFlipped]);
+
+  const handleClick = useCallback(() => {
+    setIsFlipped(f => !f);
+    setStyle({
+      transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
+      transition: 'transform 0.5s cubic-bezier(0.23, 1, 0.32, 1)'
+    });
+  }, []);
 
   return (
     <div
-      className={`gami-badge-wrapper ${badge.isUnlocked ? "unlocked" : "locked"}`}
+      className={`gami-badge-wrapper ${badge.isUnlocked ? "unlocked" : "locked"} ${isFlipped ? "flipped" : ""}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onMouseEnter={handleMouseEnter}
+      onClick={handleClick}
     >
       <div className="gami-badge-card" ref={cardRef} style={style}>
-        {/* Holographic Glare Layer */}
         <div className="gami-glare"></div>
-
         <div className="gami-badge-inner">
           <div className={`gami-badge-front tier-${badge.tier}`}>
             <div className="gami-badge-icon-wrapper">
@@ -79,7 +81,6 @@ const ShinyBadgeCard = ({ badge }) => {
             </div>
             <span className="gami-badge-name">{badge.name}</span>
           </div>
-
           <div className="gami-badge-back">
             <span className="gami-badge-back-title">{badge.name}</span>
             <p className="gami-badge-desc">{badge.description}</p>
@@ -268,7 +269,7 @@ export default function GamificationPage() {
                     <h4 className="gami-journal-name">{disc.scientific_name}</h4>
                     <p className="gami-journal-common">{disc.common_name}</p>
                     <div className="gami-journal-footer">
-                      <span className="gami-journal-date">{new Date(disc.discovered_at).toLocaleDateString()}</span>
+                      <span className="gami-journal-date">{new Date(disc.discovered_at).toLocaleDateString('en-GB')}</span>
                       <span className="gami-journal-points">+{disc.points_earned || 100} XP</span>
                     </div>
                   </div>

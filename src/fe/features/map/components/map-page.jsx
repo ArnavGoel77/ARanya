@@ -221,7 +221,7 @@ const MapContent = () => {
               bottom: 0,
               left: 0,
               right: 0,
-              zIndex: 1000,
+              zIndex: 700,
               padding: "1rem",
               backgroundColor: "rgba(255, 255, 255, 0.95)",
               backdropFilter: "blur(8px)",
@@ -315,7 +315,7 @@ const MapContent = () => {
                     {plant.conservation_status || "Identified"}
                   </span>
                   <span style={{ fontSize: "0.7rem", fontFamily: "sans-serif", opacity: 0.8 }}>
-                    {new Date(plant.discovered_at).toLocaleDateString()}
+                    {new Date(plant.discovered_at).toLocaleDateString('en-GB')}
                   </span>
                 </div>
 

@@ -6,3 +6,7 @@ firebase-credentials.json
 firebase-adminsdk.json
 .vercel
 .env*
+
+# Auto-generated build artifacts — never commit these
+dev-dist/
+dist/

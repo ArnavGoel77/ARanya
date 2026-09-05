@@ -142,7 +142,7 @@ export default function BotanistChatWindow({ isOpen, onClose, plantContext, acti
           const threadRef = await addDoc(collection(db, "chat_threads"), {
             user_id: currentUser.uid,
             plant_id: plantId,
-            plant_name: plantContext?.common_name || "General Inquiry",
+            plant_name: data.chat_title || plantContext?.common_name || "General Inquiry",
             created_at: serverTimestamp(),
             messages: [
               ...updatedMessages,

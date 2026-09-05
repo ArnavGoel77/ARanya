@@ -40,6 +40,21 @@ class ErrorBoundary extends React.Component {
   }
   componentDidCatch(error, info) {
     console.error("[ARanya ErrorBoundary]", error, info);
+    
+    // Auto-reload on Vite chunk load errors (stale cache after new deployment)
+    const isChunkError = error?.message?.match(/Failed to fetch dynamically imported module/i) || 
+                         error?.message?.match(/Importing a module script failed/i) ||
+                         error?.name === 'ChunkLoadError';
+                         
+    if (isChunkError) {
+      const lastReload = sessionStorage.getItem('chunk_reload_time');
+      const now = Date.now();
+      // Prevent infinite reload loops (only reload once per 10 seconds)
+      if (!lastReload || (now - parseInt(lastReload, 10)) > 10000) {
+        sessionStorage.setItem('chunk_reload_time', now.toString());
+        window.location.reload();
+      }
+    }
   }
   render() {
     if (this.state.hasError) {
@@ -55,19 +70,20 @@ class ErrorBoundary extends React.Component {
           <pre style={{
             background: "rgba(255,255,255,0.06)", borderRadius: "8px",
             padding: "1rem", fontSize: "0.75rem", color: "#f87171",
-            maxWidth: "600px", overflowX: "auto", textAlign: "left"
+            maxWidth: "600px", overflowX: "auto", textAlign: "left",
+            whiteSpace: "pre-wrap", wordBreak: "break-all"
           }}>
             {this.state.error?.message}
           </pre>
           <button
-            onClick={() => { this.setState({ hasError: false, error: null }); window.location.href = "/"; }}
+            onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
             style={{
               background: "#2e6b42", color: "#fff", border: "none",
               borderRadius: "10px", padding: "10px 24px", cursor: "pointer",
               fontSize: "0.875rem", fontWeight: 600
             }}
           >
-            ← Back to Home
+            ← Reload Page
           </button>
         </div>
       );
@@ -183,7 +199,7 @@ function AppLayout() {
           <aside className="agl-sidebar" onClick={(e) => e.stopPropagation()}>
             <div className="agl-sidebar-header">
               <div className="agl-sidebar-brand">
-                <img src="/logo.png" alt="ARanya" style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '4px' }} />
+                <img src="/logo.png" alt="ARanya" style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '50%' }} />
                 <span className="agl-brand-name">ARanya</span>
               </div>
               <button className="agl-close-btn" onClick={closeSidebar} aria-label="Close menu">
@@ -282,7 +298,7 @@ function AppLayout() {
             <Menu size={22} color="#2a3e34" />
           </button>
           <button className="agl-brand" onClick={() => goTo("/app")} aria-label="Go home">
-            <img src="/logo.png" alt="ARanya" style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '4px' }} />
+            <img src="/logo.png" alt="ARanya" style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '50%' }} />
             <span className="agl-brand-name">ARanya</span>
           </button>
         </div>

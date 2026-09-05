@@ -53,6 +53,7 @@ router.post('/botanist', async (req, res) => {
     res.status(200).json({
       success: true,
       data: {
+        chat_title: parsedResponse.chat_title,
         reply_text: parsedResponse.reply_text,
         suggested_followup_queries: parsedResponse.suggested_followup_queries || []
       }

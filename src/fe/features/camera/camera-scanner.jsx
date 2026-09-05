@@ -162,11 +162,15 @@ const CameraScanner = forwardRef(function CameraScanner({ onScanComplete, onModa
       const resultData = response.data;
       setIdentifyResult(resultData);
 
-      // Fetch AR metadata so we can show plant details on the chip / sheet
-      try {
-        const meta = await getArMetadata(resultData.identified_plant_id);
-        setArMetadata(meta.data);
-      } catch {
+      // Fetch AR metadata if the plant is in our database
+      if (resultData.is_in_database !== false) {
+        try {
+          const meta = await getArMetadata(resultData.identified_plant_id);
+          setArMetadata(meta.data);
+        } catch {
+          setArMetadata(null);
+        }
+      } else {
         setArMetadata(null);
       }
 
@@ -350,17 +354,25 @@ const CameraScanner = forwardRef(function CameraScanner({ onScanComplete, onModa
             className="flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.3)]"
             style={{
               backdropFilter: "blur(20px)",
-              background: "rgba(20, 31, 24, 0.85)",
+              background: identifyResult.is_in_database === false ? "rgba(40, 40, 40, 0.85)" : "rgba(20, 31, 24, 0.85)",
               border: "1px solid rgba(255, 255, 255, 0.15)",
               fontFamily: "'Inter', sans-serif",
               animation: "pop-in 0.4s cubic-bezier(0.17, 0.67, 0.16, 0.99)",
+              cursor: "pointer"
             }}
             aria-label="View plant details"
           >
             <span className="text-base">🌿</span>
             <span className="text-sm font-semibold text-muted-light">
-              {arMetadata?.common_name ?? "Unknown Species"}
+              {identifyResult.is_in_database === false 
+                ? (identifyResult.external_data?.common_name || identifyResult.external_data?.scientific_name || "Unknown Plant")
+                : (arMetadata?.common_name ?? "Unknown Species")}
             </span>
+            {identifyResult.is_in_database === false && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-gray-600 text-white/90 ml-1">
+                NOT IN DB
+              </span>
+            )}
             {identifyResult.requires_rare_highlight && (
               <span className="text-xs font-bold px-1.5 py-0.5 rounded-xl bg-accent text-muted-light">
                 RARE
