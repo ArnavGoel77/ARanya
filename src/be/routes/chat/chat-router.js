@@ -31,7 +31,7 @@ router.post('/botanist', async (req, res) => {
     while (retries > 0) {
       try {
         response = await ai.models.generateContent({
-          model: 'gemini-3.5-flash',
+          model: 'gemini-3.6-flash',
           contents: llmPrompt,
           config: {
             responseMimeType: 'application/json',
