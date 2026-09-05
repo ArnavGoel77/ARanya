@@ -48,7 +48,8 @@ const identify_plant = async (req, res) => {
           identified_plant_id: "mock_human",
           confidence_score: 0.99,
           is_native_to_region: true,
-          requires_rare_highlight: false
+          requires_rare_highlight: false,
+          is_in_database: true
         }
       });
     }
@@ -67,6 +68,8 @@ const identify_plant = async (req, res) => {
     let is_native_to_region = false;
     let requires_rare_highlight = false;
     let identified_plant_id = null;
+    let is_in_database = true;
+    let external_data = null;
 
     if (!snapshot.empty) {
        const docSnap = snapshot.docs[0];
@@ -79,10 +82,21 @@ const identify_plant = async (req, res) => {
          is_native_to_region = true; 
        }
     } else {
-       // Fallback: send demo data for human if the identified plant is not in our database
-       identified_plant_id = "mock_human";
-       is_native_to_region = true;
+       // Pl@ntNet identified a plant, but it's not in our database.
+       identified_plant_id = "external_plant";
+       is_native_to_region = false;
        requires_rare_highlight = false;
+       is_in_database = false;
+
+       let commonName = "Unknown Species";
+       if (bestMatch.species.commonNames && bestMatch.species.commonNames.length > 0) {
+           commonName = bestMatch.species.commonNames[0];
+       }
+
+       external_data = {
+           common_name: commonName,
+           scientific_name: scientificName
+       };
     }
 
     // 5. Return the formatted response exactly matching the offline model structure
@@ -92,7 +106,9 @@ const identify_plant = async (req, res) => {
         identified_plant_id,
         confidence_score: Number(confidence_score.toFixed(2)),
         is_native_to_region,
-        requires_rare_highlight
+        requires_rare_highlight,
+        is_in_database,
+        external_data
       }
     });
 
@@ -105,7 +121,8 @@ const identify_plant = async (req, res) => {
           identified_plant_id: "mock_human",
           confidence_score: 0.99,
           is_native_to_region: true,
-          requires_rare_highlight: false
+          requires_rare_highlight: false,
+          is_in_database: true
         }
       });
     }

@@ -268,7 +268,7 @@ export default function GamificationPage() {
                     <h4 className="gami-journal-name">{disc.scientific_name}</h4>
                     <p className="gami-journal-common">{disc.common_name}</p>
                     <div className="gami-journal-footer">
-                      <span className="gami-journal-date">{new Date(disc.discovered_at).toLocaleDateString()}</span>
+                      <span className="gami-journal-date">{new Date(disc.discovered_at).toLocaleDateString('en-GB')}</span>
                       <span className="gami-journal-points">+{disc.points_earned || 100} XP</span>
                     </div>
                   </div>

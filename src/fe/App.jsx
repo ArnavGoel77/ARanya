@@ -183,7 +183,7 @@ function AppLayout() {
           <aside className="agl-sidebar" onClick={(e) => e.stopPropagation()}>
             <div className="agl-sidebar-header">
               <div className="agl-sidebar-brand">
-                <img src="/logo.png" alt="ARanya" style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '4px' }} />
+                <img src="/logo.png" alt="ARanya" style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '50%' }} />
                 <span className="agl-brand-name">ARanya</span>
               </div>
               <button className="agl-close-btn" onClick={closeSidebar} aria-label="Close menu">
@@ -282,7 +282,7 @@ function AppLayout() {
             <Menu size={22} color="#2a3e34" />
           </button>
           <button className="agl-brand" onClick={() => goTo("/app")} aria-label="Go home">
-            <img src="/logo.png" alt="ARanya" style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '4px' }} />
+            <img src="/logo.png" alt="ARanya" style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '50%' }} />
             <span className="agl-brand-name">ARanya</span>
           </button>
         </div>
