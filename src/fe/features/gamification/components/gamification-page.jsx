@@ -8,14 +8,14 @@ import "./gamification-page.css";
 // --- Real Badge Directory (IDs must match Backend / Firestore) ---
 const BADGE_DIRECTORY = [
   { id: "badge_global_pioneer", name: "Global Pioneer", tier: "diamond", icon: <Star size={28} />, isUnlocked: false, description: "Be the first in the world to discover a species.", xpReward: 1000 },
-  { id: "badge_novice", name: "Novice Botanist", tier: "bronze", icon: <Sprout size={28} />, isUnlocked: false, description: "Identify your first 10 plant species.", xpReward: 100 },
-  { id: "badge_expert", name: "Expert Botanist", tier: "silver", icon: <Award size={28} />, isUnlocked: false, description: "Successfully identify 50 native species.", xpReward: 500 },
+  { id: "badge_novice", name: "Novice Botanist", tier: "bronze", icon: <Sprout size={28} />, isUnlocked: false, description: "Identify your first plant species.", xpReward: 100 },
+  { id: "badge_expert", name: "Expert Botanist", tier: "silver", icon: <Award size={28} />, isUnlocked: false, description: "Successfully identify 10 native species.", xpReward: 500 },
   { id: "badge_endemic_explorer", name: "Endemic Explorer", tier: "gold", icon: <Zap size={28} />, isUnlocked: false, description: "Document an endangered plant.", xpReward: 300 },
-  { id: "badge_ghats_guardian", name: "Ghats Guardian", tier: "silver", icon: <Shield size={28} />, isUnlocked: false, description: "Report 3 conservation threats.", xpReward: 400 },
-  { id: "badge_riparian_ranger", name: "Riparian Ranger", tier: "diamond", icon: <Compass size={28} />, isUnlocked: false, description: "Explore 10 different geographic regions.", xpReward: 800 },
+  { id: "badge_ghats_guardian", name: "Ghats Guardian", tier: "silver", icon: <Shield size={28} />, isUnlocked: false, description: "Identify 3 endangered species.", xpReward: 400 },
+  { id: "badge_riparian_ranger", name: "Riparian Ranger", tier: "diamond", icon: <Compass size={28} />, isUnlocked: false, description: "Explore 3 different geographic regions.", xpReward: 800 },
   { id: "b7", name: "Hot Streak", tier: "platinum", icon: <Flame size={28} />, isUnlocked: false, description: "Identify plants 7 days in a row.", xpReward: 250 },
   { id: "b8", name: "Nature's Friend", tier: "bronze", icon: <Sprout size={28} />, isUnlocked: false, description: "Log 5 consecutive days of activity.", xpReward: 150 },
-  { id: "b9", name: "Night Owl", tier: "silver", icon: <Compass size={28} />, isUnlocked: false, description: "Discover 5 plants between 10PM and 4AM.", xpReward: 200 }
+  { id: "b9", name: "Night Owl", tier: "silver", icon: <Compass size={28} />, isUnlocked: false, description: "Discover 3 plants between 10PM and 4AM.", xpReward: 200 }
 ];
 
 const ShinyBadgeCard = ({ badge }) => {
@@ -51,26 +51,37 @@ export default function GamificationPage() {
     totalPoints: 0,
     discoveriesCount: 0,
     badges: [],
-    discoveries: []
+    discoveries: [],
+    globalRank: "Calculating..."
   });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUserData = async () => {
       if (!currentUser?.uid) return;
-      try {
-        const userRef = doc(db, 'users', currentUser.uid);
-        const userSnap = await getDoc(userRef);
-        
-        let fetchedData = { totalPoints: 0, discoveriesCount: 0, badges: [], discoveries: [] };
-        
-        if (userSnap.exists()) {
-          const data = userSnap.data();
-          fetchedData.totalPoints = data.total_score || 0;
-          fetchedData.discoveriesCount = data.discoveries_count || 0;
-          fetchedData.badges = data.badges || [];
-        }
+      
+      let fetchedData = { totalPoints: 0, discoveriesCount: 0, badges: [], discoveries: [], globalRank: "Unranked" };
 
+      try {
+        if (currentUser.isDemo) {
+          // Skip Firestore query for demo user to avoid hanging
+          console.log("Demo user detected. Skipping Firestore query.");
+        } else {
+          const userRef = doc(db, 'users', currentUser.uid);
+          const userSnap = await getDoc(userRef);
+          
+          if (userSnap.exists()) {
+            const data = userSnap.data();
+            fetchedData.totalPoints = data.total_score || 0;
+            fetchedData.discoveriesCount = data.discoveries_count || 0;
+            fetchedData.badges = data.badges || [];
+          }
+        }
+      } catch (e) {
+        console.warn("Firestore getDoc failed (likely uninitialized):", e.message);
+      }
+
+      try {
         // Fetch recent discoveries from backend (or use mock)
         const response = await fetch(`/api/v1/users/${currentUser.uid}/discoveries`);
         if (response.ok) {
@@ -80,12 +91,20 @@ export default function GamificationPage() {
           }
         }
         
-        setUserData(fetchedData);
+        // Fetch global rank stats
+        const statsResponse = await fetch(`/api/v1/users/${currentUser.uid}/stats`);
+        if (statsResponse.ok) {
+          const statsJson = await statsResponse.json();
+          if (statsJson.data && statsJson.data.display_percentile) {
+            fetchedData.globalRank = statsJson.data.display_percentile;
+          }
+        }
       } catch (error) {
-        console.error("Error fetching gamification data:", error);
-      } finally {
-        setLoading(false);
+        console.error("Error fetching gamification APIs:", error);
       }
+      
+      setUserData(fetchedData);
+      setLoading(false);
     };
 
     fetchUserData();
@@ -173,7 +192,7 @@ export default function GamificationPage() {
             </div>
             <div className="gami-stat-box">
               <div className="gami-stat-icon">🏆</div>
-              <div className="gami-stat-value">Top 10%</div>
+              <div className={`gami-stat-value ${userData.globalRank === 'Unranked' ? 'gami-stat-unranked' : ''}`}>{userData.globalRank}</div>
               <div className="gami-stat-label">Global Rank</div>
               <div className="gami-stat-accent" />
             </div>
