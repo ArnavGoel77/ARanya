@@ -112,11 +112,19 @@ router.post('/:user_id/discoveries', async (req, res) => {
         points_awarded = base_points;
         discoveries_count += 1;
 
-        // 4. Threshold Milestones
+        // 4. Threshold Milestones & Special Badges
         if (discoveries_count === 1 && !existing_badges.includes("badge_novice")) {
           badges_unlocked.push({ badge_id: "badge_novice", badge_name: "Novice Botanist", icon_url: "https://storage.firebase.com/aranya/badges/novice.png" });
         } else if (discoveries_count === 10 && !existing_badges.includes("badge_expert")) {
           badges_unlocked.push({ badge_id: "badge_expert", badge_name: "Expert Botanist", icon_url: "https://storage.firebase.com/aranya/badges/expert.png" });
+        }
+
+        // Endemic Explorer (Rare plant)
+        if (plantDoc.exists) {
+          const plantData = plantDoc.data();
+          if ((plantData.is_rare || plantData.conservation_status === "Endangered" || plantData.conservation_status === "Critically Endangered") && !existing_badges.includes("badge_endemic_explorer")) {
+            badges_unlocked.push({ badge_id: "badge_endemic_explorer", badge_name: "Endemic Explorer", icon_url: "https://storage.firebase.com/aranya/badges/endemic_badge.png" });
+          }
         }
 
         if (is_pioneer) {
@@ -216,6 +224,66 @@ router.get('/:user_id/discoveries', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching discoveries:', error);
+    res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+/**
+ * @route GET /api/v1/users/:user_id/stats
+ * @description Fetches global rank and basic stats for a user
+ */
+router.get('/:user_id/stats', async (req, res) => {
+  try {
+    const { user_id } = req.params;
+    const db = getDb();
+    if (!db) {
+      return res.status(503).json({ success: false, error: "Database not initialized" });
+    }
+
+    // 1. Get the current user's score
+    const userDoc = await db.collection('users').doc(user_id).get();
+    if (!userDoc.exists) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+    
+    const userScore = userDoc.data().total_score || 0;
+
+    // 2. Query to see how many users have a strictly higher score
+    const higherScoresSnap = await db.collection('users')
+      .where('total_score', '>', userScore)
+      .get();
+    
+    const rank = higherScoresSnap.size + 1;
+
+    // 3. Get total user count to calculate percentile
+    const allUsersSnap = await db.collection('users').get();
+    const totalUsers = allUsersSnap.size || 1; // avoid division by zero
+
+    let percentile = (rank / totalUsers) * 100;
+    
+    // Format nicely (e.g. "Top 5%", "Top 10%", "Top 50%")
+    // If they are literally rank 1, say Top 1%
+    let displayPercentile = "Top 100%";
+    if (percentile <= 1) displayPercentile = "Top 1%";
+    else if (percentile <= 5) displayPercentile = "Top 5%";
+    else if (percentile <= 10) displayPercentile = "Top 10%";
+    else if (percentile <= 25) displayPercentile = "Top 25%";
+    else if (percentile <= 50) displayPercentile = "Top 50%";
+    else displayPercentile = `Top ${Math.ceil(percentile)}%`;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        rank,
+        total_users: totalUsers,
+        percentile,
+        display_percentile: displayPercentile,
+        total_score: userScore
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching user stats:', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
