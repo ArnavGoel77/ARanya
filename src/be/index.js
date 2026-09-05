@@ -19,9 +19,10 @@ const locationRouter = require('./routes/location/location-router');
 const visionRouter = require('./routes/vision/vision_router');
 const plantsRouter = require('./routes/plants/plants_router');
 const usersRouter = require('./routes/users/users-router');
+const dailyFactRouter = require('./routes/daily-fact/daily-fact-router');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 
 // Enable CORS so your React frontend (port 5173/3000) can talk to Express (port 5000)
@@ -36,6 +37,7 @@ app.use('/api/v1/location', locationRouter);
 app.use('/api/v1/vision', visionRouter);
 app.use('/api/v1/plants', plantsRouter);
 app.use('/api/v1/users', usersRouter);
+app.use('/api/daily-fact', dailyFactRouter);
 
 // Health check endpoint
 app.get('/', (req, res) => {
