@@ -71,6 +71,7 @@ const identify_plant = async (req, res) => {
     let identified_plant_id = null;
     let is_in_database = true;
     let external_data = null;
+    let requires_population = false;
 
     if (!snapshot.empty) {
        const docSnap = snapshot.docs[0];
@@ -82,64 +83,17 @@ const identify_plant = async (req, res) => {
        if (capture_location && capture_location.latitude) {
          is_native_to_region = true; 
        }
-    } else {
-       // Pl@ntNet identified a plant, but it's not in our database.
-       let commonName = "Unknown Species";
-       if (bestMatch.species.commonNames && bestMatch.species.commonNames.length > 0) {
-           commonName = bestMatch.species.commonNames[0];
-       }
-
        if (commonName !== "Unknown Species" && process.env.GEMINI_DATA_API_KEY) {
-           // We have a valid name and an API key! Let's auto-populate the database.
-           try {
-               const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_DATA_API_KEY });
-               const prompt = `You are a botanical data expert. I need JSON metadata for the plant: Scientific Name: "${scientificName}", Common Name: "${commonName}".
-               Please generate a strict JSON object with EXACTLY these fields:
-               {
-                 "scientific_name": "${scientificName}",
-                 "common_name": "${commonName}",
-                 "plant_family": "...",
-                 "native_region": "...",
-                 "ecological_importance": "...",
-                 "conservation_status": "...",
-                 "is_rare": boolean,
-                 "threats": "...",
-                 "conservation_best_practices": "...",
-                 "historical_context": "..."
-               }`;
-               
-               const response = await ai.models.generateContent({
-                 model: 'gemini-3.5-flash',
-                 contents: prompt,
-                 config: { responseMimeType: 'application/json' }
-               });
-               
-               const generatedData = JSON.parse(response.text);
-               
-               // Generate a slugified ID
-               const slugId = scientificName.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-               
-               // Add to Firestore
-               await db.collection('plants').doc(slugId).set(generatedData);
-               
-               // Return as if it was already in the database
-               identified_plant_id = slugId;
-               is_native_to_region = false; 
-               requires_rare_highlight = generatedData.is_rare || false;
-               is_in_database = true;
-               external_data = null;
-               
-           } catch (genErr) {
-               console.error("Gemini auto-populate failed:", genErr.message);
-               // Fallback to external plant if Gemini fails
-               identified_plant_id = "external_plant";
-               is_native_to_region = false;
-               requires_rare_highlight = false;
-               is_in_database = false;
-               external_data = { common_name: commonName, scientific_name: scientificName };
-           }
+           // We have a valid name and an API key! Defer to background population.
+           const slugId = scientificName.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+           identified_plant_id = slugId;
+           is_native_to_region = false; 
+           requires_rare_highlight = false;
+           is_in_database = false;
+           requires_population = true;
+           external_data = { common_name: commonName, scientific_name: scientificName };
        } else {
-           // Unknown species or no API key, skip Gemini and use external fallback
+           // Unknown species or no API key, use external fallback with no background population
            identified_plant_id = "external_plant";
            is_native_to_region = false;
            requires_rare_highlight = false;
@@ -157,6 +111,7 @@ const identify_plant = async (req, res) => {
         is_native_to_region,
         requires_rare_highlight,
         is_in_database,
+        requires_population,
         external_data
       }
     });
@@ -232,11 +187,58 @@ const generate_offline_payload = async (req, res) => {
     // Only send JSON error if the zip download hasn't started yet
     if (!res.headersSent) {
       res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+const populate_plant = async (req, res) => {
+  try {
+    const { scientific_name, common_name } = req.body;
+    
+    if (!scientific_name || !common_name) {
+      return res.status(400).json({ success: false, error: "Missing scientific_name or common_name" });
     }
+    
+    if (!process.env.GEMINI_DATA_API_KEY) {
+      return res.status(500).json({ success: false, error: "Gemini API key not configured" });
+    }
+    
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_DATA_API_KEY });
+    const prompt = `You are a botanical data expert. I need JSON metadata for the plant: Scientific Name: "${scientific_name}", Common Name: "${common_name}".
+    Please generate a strict JSON object with EXACTLY these fields:
+    {
+      "scientific_name": "${scientific_name}",
+      "common_name": "${common_name}",
+      "plant_family": "...",
+      "native_region": "...",
+      "ecological_importance": "...",
+      "conservation_status": "...",
+      "is_rare": boolean,
+      "threats": "...",
+      "conservation_best_practices": "...",
+      "historical_context": "..."
+    }`;
+    
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: prompt,
+      config: { responseMimeType: 'application/json' }
+    });
+    
+    const generatedData = JSON.parse(response.text);
+    const slugId = scientific_name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    
+    await db.collection('plants').doc(slugId).set(generatedData);
+    
+    res.status(200).json({ success: true, data: { identified_plant_id: slugId } });
+    
+  } catch (error) {
+    console.error("Error populating plant data:", error.message);
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
 module.exports = {
   identify_plant,
-  generate_offline_payload
+  generate_offline_payload,
+  populate_plant
 };

@@ -28,7 +28,7 @@ import React, { useState, useCallback, useEffect, useRef, useImperativeHandle, f
 import useCameraStream from "./use-camera-stream.js";
 import useCaptureFrame from "./use-capture-frame.js";
 import useArTracking from "./use-ar-tracking.js";
-import { identifyPlant, getArMetadata } from "../../services/vision_api.js";
+import { identifyPlant, getArMetadata, populatePlantDb } from "../../services/vision_api.js";
 import PlantDetailSheet from "./plant-detail-sheet.jsx";
 
 /** Auto-scan interval (ms). */
@@ -69,6 +69,7 @@ const CameraScanner = forwardRef(function CameraScanner({ onScanComplete, onModa
   const [scanError, setScanError] = useState(null);
   const [countdown, setCountdown] = useState(AUTO_SCAN_INTERVAL_MS / 1000);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isPopulating, setIsPopulating] = useState(false);
 
   /**
    * True after the first successful plant identification.
@@ -162,8 +163,20 @@ const CameraScanner = forwardRef(function CameraScanner({ onScanComplete, onModa
       const resultData = response.data;
       setIdentifyResult(resultData);
 
-      // Fetch AR metadata if the plant is in our database
-      if (resultData.is_in_database !== false) {
+      // Fetch AR metadata if the plant is in our database, OR trigger background population
+      if (resultData.requires_population) {
+        setIsPopulating(true);
+        populatePlantDb(resultData.external_data.scientific_name, resultData.external_data.common_name)
+          .then(() => getArMetadata(resultData.identified_plant_id))
+          .then((meta) => {
+             setArMetadata(meta.data);
+             setIsPopulating(false);
+          })
+          .catch((err) => {
+             console.error("Background population failed", err);
+             setIsPopulating(false);
+          });
+      } else if (resultData.is_in_database !== false) {
         try {
           const meta = await getArMetadata(resultData.identified_plant_id);
           setArMetadata(meta.data);
@@ -217,6 +230,7 @@ const CameraScanner = forwardRef(function CameraScanner({ onScanComplete, onModa
   const resumeScanning = useCallback(() => {
     setIdentifyResult(null);
     setArMetadata(null);
+    setIsPopulating(false);
     setScanState(SCAN_STATE.IDLE);
     // Do NOT restart the interval — post-first-scan mode is fully manual.
   }, []);
@@ -470,6 +484,7 @@ const CameraScanner = forwardRef(function CameraScanner({ onScanComplete, onModa
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
         onScanComplete={onScanComplete}
+        isPopulating={isPopulating}
       />
     </div>
   );
