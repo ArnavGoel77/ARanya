@@ -52,7 +52,21 @@ class ErrorBoundary extends React.Component {
       // Prevent infinite reload loops (only reload once per 10 seconds)
       if (!lastReload || (now - parseInt(lastReload, 10)) > 10000) {
         sessionStorage.setItem('chunk_reload_time', now.toString());
-        window.location.reload();
+        
+        // The real issue is the Service Worker caching the old index.html.
+        // We MUST unregister it before reloading, otherwise the reload just gets the old HTML again!
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then((registrations) => {
+            for (let registration of registrations) {
+              registration.unregister();
+            }
+            window.location.reload(true);
+          }).catch(() => {
+            window.location.reload(true);
+          });
+        } else {
+          window.location.reload(true);
+        }
       }
     }
   }
@@ -76,14 +90,24 @@ class ErrorBoundary extends React.Component {
             {this.state.error?.message}
           </pre>
           <button
-            onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
+            onClick={() => {
+              this.setState({ hasError: false, error: null });
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then((regs) => {
+                  for (let reg of regs) { reg.unregister(); }
+                  window.location.reload(true);
+                }).catch(() => window.location.reload(true));
+              } else {
+                window.location.reload(true);
+              }
+            }}
             style={{
               background: "#2e6b42", color: "#fff", border: "none",
               borderRadius: "10px", padding: "10px 24px", cursor: "pointer",
               fontSize: "0.875rem", fontWeight: 600
             }}
           >
-            ← Reload Page
+            ← Clear Cache & Reload Page
           </button>
         </div>
       );
