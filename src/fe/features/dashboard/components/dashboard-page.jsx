@@ -117,6 +117,22 @@ export default function DashboardPage() {
             <p className="common-name">Indian gooseberry · Amla</p>
           </div>
         </div>
+
+        {/* ── Daily Botanical Facts ────────────────────────────────────── */}
+        <section className="daily-fact-card" style={{ marginTop: "1.25rem", marginBottom: "0" }}>
+          <h2 className="daily-fact-title">Daily Botanical Facts</h2>
+          <ul style={{ paddingLeft: "1.25rem", margin: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            <li className="daily-fact-content">
+              <strong>The Immortal Banyan:</strong> The Indian Banyan (Ficus benghalensis) drops aerial roots that become thick trunks, allowing a single tree to cover several acres!
+            </li>
+            <li className="daily-fact-content">
+              <strong>Sacred Tulsi:</strong> Holy Basil (Ocimum tenuiflorum) is not only revered in Ayurveda but also emits ozone (O3) along with oxygen, purifying the air around it.
+            </li>
+            <li className="daily-fact-content">
+              <strong>Neem's Arsenal:</strong> The Neem tree (Azadirachta indica) produces over 130 different biologically active compounds, making it a natural pharmacy against pests and diseases.
+            </li>
+          </ul>
+        </section>
       </main>
 
       {/* ── Fullscreen Camera Overlay ────────────────────────────────── */}

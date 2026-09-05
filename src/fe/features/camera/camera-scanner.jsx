@@ -354,49 +354,58 @@ const CameraScanner = forwardRef(function CameraScanner({ onScanComplete, onModa
       </div>
 
       {/* ── AR Overlay: minimal tappable name chip ── */}
-      {scanState === SCAN_STATE.SUCCESS && identifyResult && (
-        <div
-          className="absolute inset-x-6 top-48 z-20 flex justify-center pointer-events-auto"
-          style={{
-            transform: `translate(${offset.x}px, ${offset.y}px)`,
-            transition: "transform 0.2s ease-out",
-          }}
-        >
-          <button
-            id="ar-plant-name-chip"
-            onClick={() => setIsDetailOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.3)]"
+      {scanState === SCAN_STATE.SUCCESS && identifyResult && (() => {
+        const displayedName = identifyResult.is_in_database === false 
+          ? (identifyResult.external_data?.common_name || identifyResult.external_data?.scientific_name || "Unknown Plant")
+          : (arMetadata?.common_name ?? "Unknown Species");
+        const isUnknown = displayedName === "Unknown Species" || displayedName === "Unknown Plant";
+
+        return (
+          <div
+            className="absolute inset-x-6 top-48 z-20 flex justify-center pointer-events-auto"
             style={{
-              backdropFilter: "blur(20px)",
-              background: identifyResult.is_in_database === false ? "rgba(40, 40, 40, 0.85)" : "rgba(20, 31, 24, 0.85)",
-              border: "1px solid rgba(255, 255, 255, 0.15)",
-              fontFamily: "'Inter', sans-serif",
-              animation: "pop-in 0.4s cubic-bezier(0.17, 0.67, 0.16, 0.99)",
-              cursor: "pointer"
+              transform: `translate(${offset.x}px, ${offset.y}px)`,
+              transition: "transform 0.2s ease-out",
             }}
-            aria-label="View plant details"
           >
-            <span className="text-base">🌿</span>
-            <span className="text-sm font-semibold text-muted-light">
-              {identifyResult.is_in_database === false 
-                ? (identifyResult.external_data?.common_name || identifyResult.external_data?.scientific_name || "Unknown Plant")
-                : (arMetadata?.common_name ?? "Unknown Species")}
-            </span>
-            {identifyResult.is_in_database === false && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-gray-600 text-white/90 ml-1">
-                NOT IN DB
+            <button
+              id="ar-plant-name-chip"
+              onClick={() => {
+                if (!isUnknown) {
+                  setIsDetailOpen(true);
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.3)]"
+              style={{
+                backdropFilter: "blur(20px)",
+                background: identifyResult.is_in_database === false ? "rgba(40, 40, 40, 0.85)" : "rgba(20, 31, 24, 0.85)",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
+                fontFamily: "'Inter', sans-serif",
+                animation: "pop-in 0.4s cubic-bezier(0.17, 0.67, 0.16, 0.99)",
+                cursor: isUnknown ? "default" : "pointer"
+              }}
+              aria-label="View plant details"
+            >
+              <span className="text-base">🌿</span>
+              <span className="text-sm font-semibold text-muted-light">
+                {displayedName}
               </span>
-            )}
-            {identifyResult.requires_rare_highlight && (
-              <span className="text-xs font-bold px-1.5 py-0.5 rounded-xl bg-accent text-muted-light">
-                RARE
-              </span>
-            )}
-            {/* Tap indicator */}
-            <span className="text-xs text-muted-dark ml-1">›</span>
-          </button>
-        </div>
-      )}
+              {identifyResult.is_in_database === false && (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-gray-600 text-white/90 ml-1">
+                  NOT IN DB
+                </span>
+              )}
+              {identifyResult.requires_rare_highlight && (
+                <span className="text-xs font-bold px-1.5 py-0.5 rounded-xl bg-accent text-muted-light">
+                  RARE
+                </span>
+              )}
+              {/* Tap indicator */}
+              {!isUnknown && <span className="text-xs text-muted-dark ml-1">›</span>}
+            </button>
+          </div>
+        );
+      })()}
 
       {/* ── Bottom HUD ────────────────────────────────────────────────────── */}
       <div className="absolute bottom-8 left-6 right-6 z-10 flex flex-col items-center gap-3 px-6 py-5 rounded-[2rem] bg-black/40 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">

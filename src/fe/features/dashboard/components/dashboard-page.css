@@ -246,6 +246,37 @@ html, body {
   color: #6b7a70;
 }
 
+/* Daily Botanical Fact */
+.daily-fact-card {
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(42, 62, 52, 0.1);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.daily-fact-title {
+  font-family: monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #a08355;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.daily-fact-content {
+  font-family: sans-serif;
+  font-size: 0.875rem;
+  color: #2c3e35;
+  line-height: 1.5;
+  margin: 0;
+}
+
 /* Flexbox Species Card */
 .card-container {
   position: relative;
