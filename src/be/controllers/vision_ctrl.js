@@ -225,17 +225,25 @@ const populate_plant = async (req, res) => {
     }`;
     
     const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
+      model: 'gemini-3.5-flash',
       contents: prompt,
       config: { responseMimeType: 'application/json' }
     });
     
-    const generatedData = JSON.parse(response.text);
+    const rawText = response.text;
+    const cleanedText = rawText.replace(/```(?:json)?/g, '').replace(/```/g, '').trim();
+    const generatedData = JSON.parse(cleanedText);
     const slugId = scientific_name.toLowerCase().replace(/[^a-z0-9]+/g, '_');
     
     await db.collection('plants').doc(slugId).set(generatedData);
     
-    res.status(200).json({ success: true, data: { identified_plant_id: slugId } });
+    res.status(200).json({ 
+      success: true, 
+      data: { 
+        identified_plant_id: slugId,
+        metadata: generatedData
+      } 
+    });
     
   } catch (error) {
     console.error("Error populating plant data:", error.message);

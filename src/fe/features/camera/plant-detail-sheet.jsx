@@ -28,6 +28,7 @@ import {
   Sprout
 } from "lucide-react";
 import BotanistChatWindow from "../botanist_chat/components/botanist-chat-window";
+import { CONFIDENCE_THRESHOLD } from "./camera-scanner";
 
 // ── Sub-component: a single detail row ──────────────────────────────────────
 
@@ -167,6 +168,20 @@ export default function PlantDetailSheet({ arMetadata, identifyResult, isOpen, o
               <span className="text-xs font-semibold text-primary flex-shrink-0">
                 {confidencePct} match
               </span>
+            </div>
+          )}
+          
+          {/* Low Confidence Warning */}
+          {identifyResult && identifyResult.confidence_score < CONFIDENCE_THRESHOLD && (
+            <div
+              className="flex items-center gap-3 px-4 py-3 rounded-xl mb-4 shadow-sm"
+              style={{ background: "rgba(217, 119, 6, 0.15)", border: "1px solid rgba(217, 119, 6, 0.3)" }}
+            >
+              <AlertTriangle size={18} className="text-amber-500" />
+              <div className="flex-1">
+                <p className="text-xs font-bold text-amber-500 uppercase tracking-wider mb-0.5">Very Low Confidence</p>
+                <p className="text-[11px] text-amber-500/80 leading-snug">The AI is not certain about this identification. Please double-check or scan again from a different angle.</p>
+              </div>
             </div>
           )}
 
