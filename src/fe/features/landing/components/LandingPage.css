@@ -61,15 +61,10 @@
 .lp-brand-badge {
   width: 34px;
   height: 34px;
-  border-radius: 9px;
-  background: linear-gradient(135deg, #1e3c28, #4a7c59);
   border-radius: 50%;
-  background: #2a3e34;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
 }
 
 /* matches .agl-brand-name exactly */
@@ -465,19 +460,12 @@
 
 /* matches brand-badge style */
 .lp-about-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: rgba(126, 200, 126, 0.12);
-  border: 1px solid rgba(126, 200, 126, 0.2);
   width: 52px;
   height: 52px;
-  border-radius: 14px;
-  background: rgba(42, 62, 52, 0.1);
-  border: 1px solid rgba(42, 62, 52, 0.16);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  flex-shrink: 0;
   margin-bottom: 4px;
 }
 

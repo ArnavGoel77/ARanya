@@ -29,7 +29,7 @@ const PLANT_ITEMS = [
     title: 'Indian Marigold'
   },
   {
-    image: 'https://images.unsplash.com/photo-1604762512526-b1a1a7fc3d45?w=600&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1534710961216-75c88202f43e?w=600&h=400&fit=crop',
     title: 'Jungle Ferns'
   },
   {
@@ -53,7 +53,7 @@ const PLANT_ITEMS = [
     title: 'Jasmine Blossoms'
   },
   {
-    image: 'https://images.unsplash.com/photo-1502651023060-a1d1e1c63b88?w=600&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&h=400&fit=crop',
     title: 'Green Fronds'
   },
   {
@@ -81,7 +81,7 @@ const PLANT_ITEMS = [
     title: 'Wildflowers'
   },
   {
-    image: 'https://images.unsplash.com/photo-1487530811015-780ddf47abd4?w=600&h=400&fit=crop',
+    image: 'https://images.unsplash.com/photo-1519378058457-4c29a0a2efac?w=600&h=400&fit=crop',
     title: 'Tulsi Shrub'
   },
   {
@@ -164,7 +164,7 @@ export default function LandingPage() {
       <header className="lp-topbar">
         <div className="lp-brand">
           <div className="lp-brand-badge">
-            <Leaf size={16} color="#e5dcc5" />
+            <img src="/logo.png" alt="ARanya" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           </div>
           <span className="lp-brand-name">ARanya</span>
         </div>
@@ -285,8 +285,7 @@ export default function LandingPage() {
 
             <div className="lp-about-body">
               <div className="lp-about-icon">
-                <Leaf size={28} color="#7ec87e" />
-                <Leaf size={28} color="#2a3e34" />
+                <img src="/logo.png" alt="ARanya" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
               </div>
               <p>
                 <strong>ARanya</strong> (अरण्य) — Sanskrit for <em>forest</em> — is a biodiversity exploration platform built for India's rich native flora.

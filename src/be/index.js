@@ -10,7 +10,7 @@ const plantsRouter = require('./routes/plants/plants_router');
 const usersRouter = require('./routes/users/users-router');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 
 // Enable CORS so your React frontend (port 5173/3000) can talk to Express (port 5000)
