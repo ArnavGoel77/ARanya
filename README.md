@@ -377,6 +377,18 @@ For production, set all environment variables in the Vercel project dashboard. F
 
 ---
 
+## 👥 Team
+
+| Name | Role | Contributions | GitHub |
+|---|---|---|---|
+| **Arnav Goel** | Backend Lead | Core API architecture, Firebase Admin & Firestore setup, Pl@ntNet integration, Gemini auto-population pipeline, Vercel deployment | [@ArnavGoel77](https://github.com/ArnavGoel77) |
+| **Abhinav Gupta** | Frontend Dev 1 | AR camera scanner, plant detail sheet, real-time scan state machine, AR overlay chip | [@Abhinav7682](https://github.com/Abhinav7682) |
+| **Aritra Biswas** | Integration Lead | Landing page & DriftWall hero, cross-team integration & merge conflict resolution | [@ToxicGod007](https://github.com/ToxicGod007) |
+| **Shobit Khanna** | Backend Dev 2 & Gamification | Gamification engine (dynamic points, badges, global rank), achievements page frontend | [@SK4590](https://github.com/SK4590) |
+| **Advaith SK** | Frontend Dev 2 | App architecture & routing, AI Botanist chat, interactive species map | [@Adv1-prog](https://github.com/Adv1-prog) |
+
+---
+
 <div align="center">
 
 Built with 💚 to document and protect India's incredible biodiversity.
