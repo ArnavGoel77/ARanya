@@ -73,6 +73,10 @@ const identify_plant = async (req, res) => {
     let external_data = null;
     let requires_population = false;
 
+    // Fix: Fallback to scientificName if commonNames is missing or empty
+    const commonNames = bestMatch.species.commonNames || [];
+    const commonName = commonNames.length > 0 ? commonNames[0] : scientificName;
+
     if (!snapshot.empty) {
        const docSnap = snapshot.docs[0];
        identified_plant_id = docSnap.id;
@@ -83,8 +87,9 @@ const identify_plant = async (req, res) => {
        if (capture_location && capture_location.latitude) {
          is_native_to_region = true; 
        }
-       if (commonName !== "Unknown Species" && process.env.GEMINI_DATA_API_KEY) {
-           // We have a valid name and an API key! Defer to background population.
+    } else {
+       if (scientificName && process.env.GEMINI_DATA_API_KEY) {
+           // We have a valid scientific name and an API key! Defer to background population.
            const slugId = scientificName.toLowerCase().replace(/[^a-z0-9]+/g, '_');
            identified_plant_id = slugId;
            is_native_to_region = false; 
@@ -93,7 +98,7 @@ const identify_plant = async (req, res) => {
            requires_population = true;
            external_data = { common_name: commonName, scientific_name: scientificName };
        } else {
-           // Unknown species or no API key, use external fallback with no background population
+           // No API key or invalid scientific name, use external fallback with no background population
            identified_plant_id = "external_plant";
            is_native_to_region = false;
            requires_rare_highlight = false;
